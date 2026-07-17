@@ -1,0 +1,4421 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packet Tracker</title>
+    <meta name="description"
+        content="A premium logistics dashboard with IndexedDB client-side database persistence, statistics, filters, charts, export, and real-time updates.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* ===== THEME VARIABLES ===== */
+        :root,
+        [data-theme="dark"] {
+            --bg-main: #050608;
+            --bg-sidebar: #0a0b0d;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --bg-card-hover: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --clr-primary: #6366f1;
+            --clr-primary-glow: rgba(99, 102, 241, 0.15);
+            --clr-success: #10b981;
+            --clr-warning: #f59e0b;
+            --clr-info: #06b6d4;
+            --clr-danger: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --modal-bg: #0d0e12;
+            --terminal-bg: rgba(10, 11, 13, 0.95);
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f1f5f9;
+            --bg-sidebar: #e2e8f0;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(0, 0, 0, 0.10);
+            --clr-primary-glow: rgba(99, 102, 241, 0.12);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --modal-bg: #ffffff;
+            --terminal-bg: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 45%),
+                radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.05), transparent 45%);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        [data-theme="light"] body,
+        [data-theme="light"] {
+            background-image:
+                radial-gradient(circle at top right, rgba(99, 102, 241, 0.04), transparent 45%),
+                radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.04), transparent 45%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2.5rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-title i {
+            color: var(--clr-primary);
+            font-size: 2.25rem;
+            filter: drop-shadow(0 0 8px var(--clr-primary-glow));
+        }
+
+        .header-title h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title span {
+            color: var(--clr-primary);
+        }
+
+        .db-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .db-status .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--clr-success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--clr-success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: var(--bg-card-hover);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.all {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--clr-primary);
+        }
+
+        .stat-icon.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--clr-warning);
+        }
+
+        .stat-icon.transit {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--clr-info);
+        }
+
+        .stat-icon.delivered {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--clr-success);
+        }
+
+        .stat-icon.undelivered {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--clr-danger);
+        }
+
+        .stat-info h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+            min-width: 250px;
+            max-width: 450px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--clr-primary);
+            box-shadow: 0 0 10px var(--clr-primary-glow);
+        }
+
+        .filters-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .select-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .select-input:focus {
+            border-color: var(--clr-primary);
+        }
+
+        .select-input option {
+            background: #0d0e12;
+            color: white;
+        }
+
+        .date-filter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.32rem 0.65rem;
+            min-height: 43px;
+        }
+
+        .date-filter-label {
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .date-filter input {
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            min-width: 118px;
+        }
+
+        .btn {
+            background: var(--clr-primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            box-shadow: none;
+            border-color: var(--text-muted);
+        }
+
+        .btn:disabled,
+        .btn[disabled] {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .row-checkbox,
+        .select-all-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--clr-primary);
+            cursor: pointer;
+        }
+
+        .checkbox-cell {
+            width: 36px;
+            text-align: center;
+        }
+
+        .card-select-checkbox {
+            position: absolute;
+            top: 0.9rem;
+            left: 0.9rem;
+            z-index: 2;
+        }
+
+        /* Data Table Container */
+        .table-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+        }
+
+        table {
+            width: 100%;
+            min-width: 760px;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        #tableWrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.015);
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr {
+            transition: var(--transition);
+        }
+
+        tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .letter-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--clr-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .copy-btn:hover {
+            color: white;
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .badge.pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--clr-warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge.transit {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--clr-info);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .badge.delivered {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--clr-success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .sla-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .sla-badge.safe {
+            color: var(--clr-success);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .sla-badge.due-today {
+            color: var(--clr-warning);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .sla-badge.overdue {
+            color: var(--clr-danger);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .sla-badge.done {
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Reminder / Alert Button */
+        .action-btn.remind {
+            width: auto;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            gap: 0.25rem;
+        }
+
+        .action-btn.remind:hover {
+            color: var(--clr-danger);
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .remind-pulse {
+            animation: remindPulse 1.8s infinite;
+        }
+
+        @keyframes remindPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* Reminder Modal extra styles */
+        .reminder-info-box {
+            background: rgba(239, 68, 68, 0.07);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .reminder-info-box i {
+            color: var(--clr-danger);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .reminder-to-field {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .reminder-textarea {
+            width: 100%;
+            min-height: 140px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .reminder-textarea:focus {
+            border-color: var(--clr-danger);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+        }
+
+        .btn-danger {
+            background: var(--clr-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Toast Notification */
+        #toastContainer {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            background: #0d0e12;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--clr-success);
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            min-width: 280px;
+            max-width: 360px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: toastIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .toast.toast-warn {
+            border-left-color: var(--clr-warning);
+        }
+
+        .toast.toast-error {
+            border-left-color: var(--clr-danger);
+        }
+
+        .toast i {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .toast.toast-warn i {
+            color: var(--clr-warning);
+        }
+
+        .toast.toast-error i {
+            color: var(--clr-danger);
+        }
+
+        .toast i:not(.toast-warn i):not(.toast-error i) {
+            color: var(--clr-success);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .time-cell {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Action Buttons */
+        .actions-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
+
+        .action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            color: white;
+            border-color: var(--text-muted);
+            background: var(--bg-card-hover);
+        }
+
+        .action-btn.delete:hover {
+            color: var(--clr-danger);
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-btn.flow {
+            width: auto;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            gap: 0.25rem;
+        }
+
+        .action-btn.flow:hover {
+            color: var(--clr-success);
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .empty-state h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            transform: scale(0.9);
+            transition: var(--transition);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: white;
+        }
+
+        /* Forms in Modal */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-control-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--clr-primary);
+        }
+
+        .form-control-row input {
+            flex-grow: 1;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Database Terminal / Console Log */
+        .terminal-panel {
+            background: var(--terminal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 250px;
+        }
+
+        .terminal-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--clr-primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .terminal-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .terminal-action-btn:hover {
+            color: white;
+        }
+
+        .terminal-body {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            color: var(--text-secondary);
+        }
+
+        .terminal-log-line {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+        }
+
+        .log-tag {
+            font-weight: bold;
+        }
+
+        .log-tag.db {
+            color: var(--clr-primary);
+        }
+
+        .log-tag.success {
+            color: var(--clr-success);
+        }
+
+        .log-tag.warn {
+            color: var(--clr-warning);
+        }
+
+        .log-tag.danger {
+            color: var(--clr-danger);
+        }
+
+        .log-message {
+            color: var(--text-primary);
+        }
+
+        /* ===== HEADER TOOLBAR ===== */
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .icon-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+            background: var(--bg-card-hover);
+        }
+
+        .notification-wrap {
+            position: relative;
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: var(--clr-danger);
+            color: white;
+            border: 2px solid var(--bg-main);
+            font-size: 0.65rem;
+            font-weight: 800;
+            line-height: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .notification-dot.active {
+            display: block;
+        }
+
+        .notification-panel {
+            position: absolute;
+            top: calc(100% + 0.75rem);
+            right: 0;
+            width: min(360px, calc(100vw - 2rem));
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+            padding: 0.9rem;
+            z-index: 900;
+            display: none;
+        }
+
+        .notification-panel.active {
+            display: block;
+        }
+
+        .notification-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0.65rem;
+        }
+
+        .notification-head strong {
+            font-size: 0.9rem;
+        }
+
+        .notification-head span {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .notification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 28px 1fr;
+            gap: 0.65rem;
+            text-align: left;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.55rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .notification-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-color);
+        }
+
+        .notification-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--clr-primary);
+        }
+
+        .notification-item.overdue .notification-icon {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--clr-danger);
+        }
+
+        .notification-item.due-today .notification-icon {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--clr-warning);
+        }
+
+        .notification-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .notification-meta {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            line-height: 1.35;
+            margin-top: 0.15rem;
+        }
+
+        .notification-empty {
+            padding: 1.4rem 0.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .icon-btn:focus-visible {
+            outline: 2px solid var(--clr-primary);
+            outline-offset: 2px;
+        }
+
+        #primary-color-picker {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2px;
+            cursor: pointer;
+            background: var(--bg-card);
+        }
+
+        .lang-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0 0.75rem;
+            height: 36px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .user-pill:hover {
+            border-color: var(--clr-primary);
+        }
+
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--clr-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            background: var(--clr-primary-glow);
+            color: var(--clr-primary);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* ===== CHARTS SECTION ===== */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .chart-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .chart-card h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .chart-card canvas {
+            max-height: 220px;
+        }
+
+        /* ===== REAL-TIME BADGE ===== */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--clr-success);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            margin-left: 0.5rem;
+        }
+
+        .live-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--clr-success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* ===== EXPORT TOOLBAR ===== */
+        .export-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn-sm {
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--clr-primary);
+            color: var(--clr-primary);
+            background: var(--clr-primary-glow);
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* ===== LOGIN MODAL ===== */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: loginIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes loginIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .login-logo h2 span {
+            color: var(--clr-primary);
+        }
+
+        .login-logo p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .login-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            color: var(--clr-danger);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .login-hint {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .login-hint code {
+            background: var(--bg-card-hover);
+            border-radius: 4px;
+            padding: 0.1rem 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ===== ADMIN ONLY ELEMENTS ===== */
+        .admin-only {
+            display: none;
+        }
+
+        body.role-admin .admin-only {
+            display: inline-flex;
+        }
+
+        /* ===== GRIDSTACK CUSTOMIZATION ===== */
+        .grid-stack-item-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            overflow: auto;
+        }
+
+        .gs-section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        /* ===== FOCUS ACCESSIBILITY ===== */
+        *:focus-visible {
+            outline: 2px solid var(--clr-primary);
+            outline-offset: 2px;
+        }
+
+        .btn:focus-visible,
+        .action-btn:focus-visible,
+        .icon-btn:focus-visible {
+            outline: 2px solid var(--clr-primary);
+            outline-offset: 2px;
+        }
+
+        /* ===== BRANCH / ROUTE PILL ===== */
+        .route-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.88rem;
+        }
+
+        .branch-flag {
+            font-size: 1rem;
+        }
+
+        .route-arrow {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .branch-name {
+            font-weight: 500;
+        }
+
+        /* ===== SHIPMENT PROGRESS STEPPER ===== */
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .step-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: var(--bg-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            transition: var(--transition);
+            z-index: 1;
+        }
+
+        .step.active .step-dot {
+            border-color: var(--clr-primary);
+            background: var(--clr-primary);
+            box-shadow: 0 0 8px var(--clr-primary-glow);
+            color: white;
+        }
+
+        .step.done .step-dot {
+            border-color: var(--clr-success);
+            background: var(--clr-success);
+            color: white;
+        }
+
+        .step-line {
+            width: 28px;
+            height: 2px;
+            background: var(--border-color);
+            transition: var(--transition);
+        }
+
+        .step-line.done {
+            background: var(--clr-success);
+        }
+
+        .step-line.active {
+            background: var(--clr-primary);
+        }
+
+        .step-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+            white-space: nowrap;
+        }
+
+        .step.active .step-label {
+            color: var(--clr-primary);
+        }
+
+        .step.done .step-label {
+            color: var(--clr-success);
+        }
+
+        .status-history {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.65rem;
+            max-width: 340px;
+        }
+
+        .history-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.28rem;
+            padding: 0.2rem 0.45rem;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+            white-space: nowrap;
+        }
+
+        .history-chip strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .due-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            min-width: 118px;
+        }
+
+        .due-date {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+
+        /* ===== CARD VIEW ===== */
+        .view-toggle {
+            display: flex;
+            gap: 0.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 30px;
+            height: 28px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .view-btn.active {
+            background: var(--clr-primary);
+            color: white;
+        }
+
+        .cards-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            padding: 1.25rem;
+        }
+
+        .cards-grid.active {
+            display: grid;
+        }
+
+        .table-container.hidden {
+            display: none;
+        }
+
+        .shipment-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+            transition: var(--transition);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shipment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .shipment-card.pending::before {
+            background: var(--clr-warning);
+        }
+
+        .shipment-card.transit::before {
+            background: var(--clr-info);
+        }
+
+        .shipment-card.delivered::before {
+            background: var(--clr-success);
+        }
+
+        .shipment-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--clr-primary);
+            font-size: 0.95rem;
+        }
+
+        .card-route {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .card-branch {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .card-branch-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--clr-primary-glow);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .card-arrow {
+            flex-grow: 1;
+            height: 1px;
+            background: var(--border-color);
+            position: relative;
+        }
+
+        .card-arrow::after {
+            content: 'â€º';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 0;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .card-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        /* ===== ENHANCED TOAST ===== */
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+            padding: 1rem 1.25rem;
+        }
+
+        .toast-body {
+            flex-grow: 1;
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .toast-msg {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0;
+            flex-shrink: 0;
+            align-self: flex-start;
+            transition: color 0.2s;
+        }
+
+        .toast-close:hover {
+            color: white;
+        }
+
+        /* ===== STAT CARD GLOW ON HOVER ===== */
+        .stat-card:hover .stat-icon.all {
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .stat-card:hover .stat-icon.pending {
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .stat-card:hover .stat-icon.transit {
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+        }
+
+        .stat-card:hover .stat-icon.delivered {
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .stat-card:hover .stat-icon.undelivered {
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .header-toolbar {
+                flex-wrap: wrap;
+            }
+
+            .controls-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-wrapper {
+                max-width: none;
+            }
+
+            .filters-group {
+                justify-content: space-between;
+            }
+
+            .select-input,
+            .btn {
+                flex-grow: 1;
+            }
+
+            td,
+            th {
+                padding: 0.75rem 1rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                display: none;
+            }
+
+            .hero-banner {
+                height: 160px;
+            }
+        }
+
+        /* ===== FINAL POLISH PASS ===== */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(120deg, transparent 35%, rgba(99, 102, 241, 0.035), transparent 65%);
+            z-index: -1;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding-top: 1rem;
+            background: color-mix(in srgb, var(--bg-main) 88%, transparent);
+            backdrop-filter: blur(18px);
+        }
+
+        .stat-card,
+        .chart-card,
+        .controls-panel,
+        .table-container,
+        .terminal-panel {
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--clr-primary), transparent);
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+
+        .stat-card:hover::after,
+        .stat-card:focus-visible::after {
+            opacity: .9;
+        }
+
+        .search-input,
+        .select-input,
+        .form-control,
+        .reminder-textarea,
+        .reminder-to-field {
+            background: color-mix(in srgb, var(--bg-main) 62%, transparent);
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .select-input option,
+        [data-theme="light"] .form-control option {
+            background: #fff;
+            color: #0f172a;
+        }
+
+        button,
+        input,
+        select,
+        [role="button"] {
+            touch-action: manipulation;
+        }
+
+        :focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--clr-primary) 55%, white);
+            outline-offset: 3px;
+        }
+
+        #lettersTable thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        #emptyState::before {
+            content: '\1F4E6';
+            display: block;
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 1rem;
+            filter: grayscale(.15);
+        }
+
+        @media (max-width: 980px) {
+            header { position: static; }
+            .container { padding: 1.25rem; }
+            .header-toolbar { width: 100%; }
+            .export-toolbar { order: 3; width: 100%; }
+            .export-toolbar .btn { flex: 1; justify-content: center; }
+        }
+
+        @media (max-width: 560px) {
+            .container { padding: .9rem; }
+            .header-title h1 { font-size: 1.35rem; }
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+            .stat-card { padding: 1rem; gap: .75rem; }
+            .stat-icon { width: 42px; height: 42px; }
+            .stat-value { font-size: 1.45rem; }
+            .stat-info h3 { font-size: .7rem; }
+            .filters-group > * { width: 100%; }
+            .view-toggle { width: 100%; }
+            .view-btn { flex: 1; }
+            #toastContainer { inset: auto .75rem .75rem; }
+            .toast { min-width: 0; width: 100%; }
+            .notification-wrap { position: static; }
+            .notification-panel { left: .75rem; right: .75rem; width: auto; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ===== LOGIN OVERLAY ===== -->
+    <div class="login-overlay" id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
+        <div class="login-box">
+            <!-- Login Form Section -->
+            <div id="loginFormSection">
+                <div class="login-logo">
+                    <i class="ph-bold ph-truck" style="font-size:2.5rem;color:var(--clr-primary);"></i>
+                    <h2>Packet <span>Tracker</span></h2>
+                    <p>Sign in to access your dashboard</p>
+                </div>
+                <div class="login-error" id="loginError" role="alert">Invalid username or password.</div>
+                <div class="form-group">
+                    <label for="loginUser">Username</label>
+                    <input type="text" id="loginUser" class="form-control" placeholder="admin / user"
+                        autocomplete="username" aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="loginPass">Password</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="password123"
+                        autocomplete="current-password" aria-required="true">
+                </div>
+                <button class="btn" id="loginBtn" style="width:100%;margin-top:0.5rem;">
+                    <i class="ph-bold ph-sign-in"></i> Sign In
+                </button>
+                <div style="text-align: center; margin-top: 1.25rem; font-size: 0.85rem;">
+                    <a href="#" id="showSignupLink" style="color: var(--clr-primary); text-decoration: none; font-weight: 600;">Don't have an account? Sign Up</a>
+                </div>
+                <div class="login-hint">
+                    Demo credentials:<br>
+                    <code>admin</code> / <code>password123</code> &nbsp;|&nbsp;
+                    <code>user</code> / <code>pass456</code>
+                </div>
+            </div>
+
+            <!-- Signup Form Section -->
+            <div id="signupFormSection" class="hidden">
+                <div class="login-logo">
+                    <i class="ph-bold ph-truck" style="font-size:2.5rem;color:var(--clr-primary);"></i>
+                    <h2>Packet <span>Tracker</span></h2>
+                    <p>Create a new account</p>
+                </div>
+                <div class="login-error" id="signupError" role="alert" style="display:none; margin-bottom:1rem;"></div>
+                <div class="form-group">
+                    <label for="signupUser">Username</label>
+                    <input type="text" id="signupUser" class="form-control" placeholder="Choose username" aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" class="form-control" placeholder="Your name" aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="signupRole">Role</label>
+                    <select id="signupRole" class="form-control" aria-required="true">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="signupPass">Password</label>
+                    <input type="password" id="signupPass" class="form-control" placeholder="Create password" aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="signupConfirmPass">Confirm Password</label>
+                    <input type="password" id="signupConfirmPass" class="form-control" placeholder="Repeat password" aria-required="true">
+                </div>
+                <button class="btn" id="signupBtn" style="width:100%;margin-top:0.5rem;">
+                    <i class="ph-bold ph-user-plus"></i> Sign Up
+                </button>
+                <div style="text-align: center; margin-top: 1.25rem; font-size: 0.85rem;">
+                    <a href="#" id="showLoginLink" style="color: var(--clr-primary); text-decoration: none; font-weight: 600;">Already have an account? Log In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Top Header -->
+        <header>
+            <div class="header-title">
+                <i class="ph-bold ph-truck" aria-hidden="true"></i>
+                <h1>Packet <span>Tracker</span>
+                    <span class="live-badge" aria-label="Live updates active">
+                        <span class="dot"></span> Live
+                    </span>
+                </h1>
+            </div>
+            <div class="header-toolbar" role="toolbar" aria-label="Dashboard controls">
+                <div class="db-status" id="dbStatus">
+                    <span class="pulse-dot"></span>
+                    <span id="dbStatusText">Initializing...</span>
+                </div>
+                <div class="export-toolbar">
+                    <button class="btn btn-outline btn-sm" id="exportCsvBtn" title="Export as CSV"
+                        aria-label="Export CSV">
+                        <i class="ph ph-file-csv"></i> CSV
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="exportJsonBtn" title="Export as JSON"
+                        aria-label="Export JSON">
+                        <i class="ph ph-file-js"></i> JSON
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="exportPdfBtn" title="Export as PDF"
+                        aria-label="Export PDF">
+                        <i class="ph ph-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="importDataBtn" title="Import CSV or JSON"
+                        aria-label="Import CSV or JSON">
+                        <i class="ph ph-upload-simple"></i> Import
+                    </button>
+                    <input type="file" id="importFileInput" accept=".csv,.json,application/json,text/csv" hidden>
+                </div>
+                <select class="lang-select" id="langSelect" aria-label="Language selector">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ar">Arabic</option>
+                </select>
+                <button class="icon-btn" id="themeToggleBtn" title="Toggle dark / light mode"
+                    aria-label="Toggle dark/light mode">
+                    <i class="ph ph-moon" id="themeIcon"></i>
+                </button>
+                <div class="notification-wrap">
+                    <button class="icon-btn" id="notificationBtn" title="Notifications" aria-label="Open notifications"
+                        aria-expanded="false">
+                        <i class="ph ph-bell-ringing"></i>
+                        <span class="notification-dot" id="notificationCount">0</span>
+                    </button>
+                    <div class="notification-panel" id="notificationPanel" role="dialog" aria-label="Notification center">
+                        <div class="notification-head">
+                            <strong>Notifications</strong>
+                            <span id="notificationSummary">All clear</span>
+                        </div>
+                        <div class="notification-list" id="notificationList"></div>
+                    </div>
+                </div>
+                <input type="color" id="primaryColorPicker" value="#6366f1" title="Pick accent color"
+                    aria-label="Pick accent color">
+                <div class="user-pill" id="userPill" tabindex="0" role="button" aria-label="User menu">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <span id="userNameLabel">Admin</span>
+                    <span class="role-badge" id="userRoleBadge">Admin</span>
+                </div>
+                <button class="icon-btn" id="logoutBtn" title="Sign out" aria-label="Sign out">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon all">
+                    <i class="ph-bold ph-package"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Letters</h3>
+                    <p class="stat-value" id="statTotal">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <i class="ph-bold ph-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Pending</h3>
+                    <p class="stat-value" id="statPending">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon transit">
+                    <i class="ph-bold ph-paper-plane-tilt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>In Transit</h3>
+                    <p class="stat-value" id="statTransit">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon delivered">
+                    <i class="ph-bold ph-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Delivered</h3>
+                    <p class="stat-value" id="statDelivered">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon transit">
+                    <i class="ph-bold ph-warning-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>SLA Risk</h3>
+                    <p class="stat-value" id="statSlaRisk">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon all">
+                    <i class="ph-bold ph-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Avg. Delivery</h3>
+                    <p class="stat-value" id="statAvgDelivery">0.0d</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== CHARTS & ANALYTICS ===== -->
+        <section class="charts-grid" id="chartsSection" aria-label="Analytics charts">
+            <div class="chart-card">
+                <h3><i class="ph ph-chart-pie"></i> Status Distribution</h3>
+                <canvas id="statusPieChart" role="img"
+                    aria-label="Pie chart showing shipment status distribution"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3><i class="ph ph-chart-bar"></i> Shipments Over Time</h3>
+                <canvas id="trendsBarChart" role="img"
+                    aria-label="Bar chart showing shipments added over time"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3><i class="ph ph-activity"></i> Live Activity Feed</h3>
+                <canvas id="liveLineChart" role="img" aria-label="Line chart showing live incoming events"></canvas>
+            </div>
+        </section>
+
+        <!-- Search & Filters -->
+        <section class="controls-panel" role="search">
+            <div class="search-wrapper">
+                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" id="searchInput" class="search-input"
+                    placeholder="Search by ID, sender, receiver..." aria-label="Search shipments">
+            </div>
+            <div class="filters-group">
+                <select id="statusFilter" class="select-input" aria-label="Filter by status">
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Undelivered">Not Delivered</option>
+                </select>
+                <select id="senderFilter" class="select-input" aria-label="Filter by sender branch">
+                    <option value="All">All Senders</option>
+                </select>
+                <select id="receiverFilter" class="select-input" aria-label="Filter by receiver branch">
+                    <option value="All">All Receivers</option>
+                </select>
+                <select id="slaFilter" class="select-input" aria-label="Filter by SLA status">
+                    <option value="All">All SLA</option>
+                    <option value="Overdue">Overdue</option>
+                    <option value="Due Today">Due Today</option>
+                    <option value="On Track">On Track</option>
+                </select>
+                <label class="date-filter">
+                    <span class="date-filter-label" id="dateFromLabel">From</span>
+                    <input type="date" id="dateFromFilter" aria-label="Updated from date">
+                </label>
+                <label class="date-filter">
+                    <span class="date-filter-label" id="dateToLabel">To</span>
+                    <input type="date" id="dateToFilter" aria-label="Updated to date">
+                </label>
+                <select id="sortBy" class="select-input" aria-label="Sort by">
+                    <option value="updatedAt-desc">Latest Updated</option>
+                    <option value="updatedAt-asc">Oldest Updated</option>
+                    <option value="dueDate-asc">Due Soon</option>
+                    <option value="dueDate-desc">Due Latest</option>
+                    <option value="id-asc">Letter ID (A-Z)</option>
+                    <option value="id-desc">Letter ID (Z-A)</option>
+                </select>
+                <button class="btn btn-secondary" id="clearFiltersBtn" aria-label="Clear filters">
+                    <i class="ph ph-funnel-x" aria-hidden="true"></i> Clear
+                </button>
+                <button class="btn" id="openAddModalBtn" aria-label="Add new letter">
+                    <i class="ph-bold ph-plus" aria-hidden="true"></i> Add New Letter
+                </button>
+                <select id="bulkStatusSelect" class="select-input admin-only" aria-label="Bulk status update">
+                    <option value="">Bulk status action</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+                <button class="btn btn-secondary admin-only" id="applyBulkStatusBtn" aria-label="Apply bulk status update" disabled>
+                    <i class="ph ph-arrow-clockwise" aria-hidden="true"></i> Update Status
+                </button>
+                <button class="btn btn-secondary admin-only" id="bulkDeleteBtn" aria-label="Delete selected">
+                    <i class="ph ph-trash" aria-hidden="true"></i> Bulk Delete
+                </button>
+                <!-- View toggle -->
+                <div class="view-toggle" role="group" aria-label="View mode">
+                    <button class="view-btn active" id="tableViewBtn" title="Table view" aria-label="Table view">
+                        <i class="ph ph-list"></i>
+                    </button>
+                    <button class="view-btn" id="cardViewBtn" title="Card view" aria-label="Card view">
+                        <i class="ph ph-squares-four"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Card Grid View -->
+        <div class="cards-grid table-container" id="cardsGrid"></div>
+
+        <!-- Data Table -->
+        <section class="table-container" id="tableWrapper">
+            <table id="lettersTable">
+                <thead>
+                    <tr>
+                        <th class="checkbox-cell">
+                            <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox"
+                                aria-label="Select all shipments" title="Select all">
+                        </th>
+                        <th>Letter ID</th>
+                        <th>Route</th>
+                        <th>Progress</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Carrier</th>
+                        <th>Due / SLA</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="letterTableBody">
+                    <!-- Dynamic Rows go here -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <img src="empty_state.png" alt="No shipments"
+                    style="width:140px;height:140px;object-fit:contain;margin-bottom:1rem;opacity:0.85;">
+                <h3>No shipments found</h3>
+                <p>Try refining your search query or add a new shipment to get started.</p>
+            </div>
+        </section>
+
+        <!-- ===== DATABASE LOG ===== -->
+        <section class="terminal-panel" aria-label="Database activity log">
+            <div class="terminal-header">
+                <div class="terminal-title">
+                    <i class="ph-bold ph-terminal-window" aria-hidden="true"></i>
+                    <span>DATABASE_LOG_CONSOLE</span>
+                </div>
+                <div class="terminal-actions">
+                    <button class="terminal-action-btn" id="clearTerminalBtn" title="Clear Logs"
+                        aria-label="Clear logs">
+                        <i class="ph ph-trash" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="terminal-body" id="terminalLogs" role="log" aria-live="polite" aria-label="Database log output">
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Form (Add / Edit) -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="Shipment form">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Letter</h2>
+                <button class="close-modal" id="closeModalBtn" aria-label="Close modal">
+                    <i class="ph-bold ph-x" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form id="letterForm" novalidate>
+                <div class="form-group">
+                    <label for="letterId">Letter ID</label>
+                    <div class="form-control-row">
+                        <input type="text" id="letterId" class="form-control" placeholder="LT-XXXX" required
+                            aria-required="true">
+                        <button type="button" class="btn btn-secondary" id="generateIdBtn" title="Generate ID"
+                            aria-label="Auto-generate ID">
+                            <i class="ph ph-sparkle" aria-hidden="true"></i> Auto
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sender">Sender Branch</label>
+                    <input type="text" id="sender" class="form-control" placeholder="E.g., Berlin Hub" required
+                        aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="receiver">Receiver Branch</label>
+                    <input type="text" id="receiver" class="form-control" placeholder="E.g., Munich Distribution"
+                        required aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="status">Current Status</label>
+                    <select id="status" class="form-control" aria-label="Shipment status">
+                        <option value="Pending">Pending</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Delivered">Delivered</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate">Expected Delivery Date</label>
+                    <input type="date" id="dueDate" class="form-control" aria-label="Expected delivery date">
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority" class="form-control" aria-label="Shipment priority">
+                        <option value="Standard">Standard</option>
+                        <option value="Express">Express</option>
+                        <option value="Overnight">Overnight</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="weight">Weight (kg)</label>
+                    <input type="number" step="0.1" id="weight" class="form-control" placeholder="e.g. 2.4" aria-label="Package weight">
+                </div>
+                <div class="form-group">
+                    <label for="dimensions">Dimensions (L×W×H cm)</label>
+                    <input type="text" id="dimensions" class="form-control" placeholder="e.g. 25x18x12" aria-label="Package dimensions">
+                </div>
+                <div class="form-group">
+                    <label for="carrier">Carrier</label>
+                    <input type="text" id="carrier" class="form-control" placeholder="Courier / provider" aria-label="Carrier name">
+                </div>
+                <div class="form-group">
+                    <label for="trackingNumber">Tracking Number</label>
+                    <input type="text" id="trackingNumber" class="form-control" placeholder="Tracking ID" aria-label="Tracking number">
+                </div>
+                <div class="form-group">
+                    <label for="receiverContact">Recipient Contact</label>
+                    <input type="text" id="receiverContact" class="form-control" placeholder="Phone or email" aria-label="Recipient contact">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" class="form-control reminder-textarea" rows="3" placeholder="Add shipment notes..." aria-label="Shipment notes"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn" id="saveBtn">Save Shipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reminder / Notification Modal -->
+    <div class="modal-overlay" id="reminderModalOverlay">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h2 id="reminderModalTitle"><i class="ph-bold ph-bell-ringing"
+                        style="color:var(--clr-danger);margin-right:0.4rem;"></i>Send Delivery Reminder</h2>
+                <button class="close-modal" id="closeReminderModalBtn">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <div class="reminder-info-box">
+                <i class="ph-bold ph-warning"></i>
+                <div>
+                    Letter <strong id="reminderLetterId">â€”</strong> has <strong>not been delivered</strong> yet.
+                    Current status: <span id="reminderCurrentStatus">â€”</span>. A reminder will be sent to the
+                    responsible party.
+                </div>
+            </div>
+            <div class="form-group">
+                <label>To (Receiver / Company)</label>
+                <div class="reminder-to-field" id="reminderToField">â€”</div>
+            </div>
+            <div class="form-group">
+                <label for="reminderMessage">Reminder Message</label>
+                <textarea class="reminder-textarea" id="reminderMessage"
+                    placeholder="Enter reminder message..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelReminderBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="sendReminderBtn">
+                    <i class="ph-bold ph-paper-plane-tilt"></i> Send Reminder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Scripting for Database & App Flow -->
+    <script>
+        // IndexedDB Manager Class
+        class TrackerDB {
+            constructor() {
+                this.dbName = 'LetterTrackerDB';
+                this.dbVersion = 1;
+                this.db = null;
+            }
+
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.dbVersion);
+
+                    request.onerror = (event) => {
+                        reject(new Error(`Failed to open IndexedDB: ${event.target.error}`));
+                    };
+
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        resolve(this.db);
+                    };
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+
+                        // Object Store for letter shipments
+                        if (!db.objectStoreNames.contains('letters')) {
+                            const letterStore = db.createObjectStore('letters', { keyPath: 'id' });
+                            letterStore.createIndex('sender', 'sender', { unique: false });
+                            letterStore.createIndex('receiver', 'receiver', { unique: false });
+                            letterStore.createIndex('status', 'status', { unique: false });
+                            letterStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+                        }
+
+                        // Object Store for db activities/history logs
+                        if (!db.objectStoreNames.contains('logs')) {
+                            db.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
+                        }
+                    };
+                });
+            }
+
+            // General promise-based transaction runner
+            runTransaction(storeName, mode, callback) {
+                return new Promise((resolve, reject) => {
+                    if (!this.db) {
+                        reject(new Error("Database not initialized"));
+                        return;
+                    }
+                    const transaction = this.db.transaction([storeName], mode);
+                    const store = transaction.objectStore(storeName);
+                    const request = callback(store);
+
+                    transaction.oncomplete = () => {
+                        resolve(request.result);
+                    };
+
+                    transaction.onerror = (event) => {
+                        reject(event.target.error);
+                    };
+                });
+            }
+
+            // --- Letter Store API ---
+            async getLetter(id) {
+                return this.runTransaction('letters', 'readonly', (store) => store.get(id));
+            }
+
+            async saveLetter(letter) {
+                return this.runTransaction('letters', 'readwrite', (store) => store.put(letter));
+            }
+
+            async deleteLetter(id) {
+                return this.runTransaction('letters', 'readwrite', (store) => store.delete(id));
+            }
+
+            async getAllLetters() {
+                return this.runTransaction('letters', 'readonly', (store) => store.getAll());
+            }
+
+            // --- Activity Log API ---
+            async addLog(message, type = 'info') {
+                const logEntry = {
+                    message,
+                    type,
+                    timestamp: new Date().toISOString()
+                };
+                return this.runTransaction('logs', 'readwrite', (store) => store.add(logEntry));
+            }
+
+            async getLogs(limit = 40) {
+                return new Promise((resolve, reject) => {
+                    if (!this.db) {
+                        resolve([]);
+                        return;
+                    }
+                    const transaction = this.db.transaction(['logs'], 'readonly');
+                    const store = transaction.objectStore('logs');
+                    const request = store.openCursor(null, 'prev'); // cursor in reverse direction to get latest first
+                    const results = [];
+
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor && results.length < limit) {
+                            results.push(cursor.value);
+                            cursor.continue();
+                        } else {
+                            resolve(results);
+                        }
+                    };
+
+                    request.onerror = (event) => {
+                        reject(event.target.error);
+                    };
+                });
+            }
+
+            async clearLogs() {
+                return this.runTransaction('logs', 'readwrite', (store) => store.clear());
+            }
+        }
+
+        // --- Application State ---
+        const db = new TrackerDB();
+        let allLetters = [];
+        let editingId = null;
+
+        // --- DOM Elements ---
+        const dbStatusText = document.getElementById('dbStatusText');
+        const dbStatusDot = document.querySelector('.pulse-dot');
+        const statTotal = document.getElementById('statTotal');
+        const statPending = document.getElementById('statPending');
+        const statTransit = document.getElementById('statTransit');
+        const statDelivered = document.getElementById('statDelivered');
+        const letterTableBody = document.getElementById('letterTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const senderFilter = document.getElementById('senderFilter');
+        const receiverFilter = document.getElementById('receiverFilter');
+        const slaFilter = document.getElementById('slaFilter');
+        const dateFromFilter = document.getElementById('dateFromFilter');
+        const dateToFilter = document.getElementById('dateToFilter');
+        const sortBy = document.getElementById('sortBy');
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFileInput = document.getElementById('importFileInput');
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationPanel = document.getElementById('notificationPanel');
+        const notificationCount = document.getElementById('notificationCount');
+        const notificationList = document.getElementById('notificationList');
+        const notificationSummary = document.getElementById('notificationSummary');
+        const bulkStatusSelect = document.getElementById('bulkStatusSelect');
+        const applyBulkStatusBtn = document.getElementById('applyBulkStatusBtn');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        let selectedIds = new Set();
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        const letterForm = document.getElementById('letterForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const letterIdInput = document.getElementById('letterId');
+        const senderInput = document.getElementById('sender');
+        const receiverInput = document.getElementById('receiver');
+        const statusInput = document.getElementById('status');
+        const dueDateInput = document.getElementById('dueDate');
+        const priorityInput = document.getElementById('priority');
+        const weightInput = document.getElementById('weight');
+        const dimensionsInput = document.getElementById('dimensions');
+        const carrierInput = document.getElementById('carrier');
+        const trackingNumberInput = document.getElementById('trackingNumber');
+        const receiverContactInput = document.getElementById('receiverContact');
+        const notesInput = document.getElementById('notes');
+
+        const openAddModalBtn = document.getElementById('openAddModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const generateIdBtn = document.getElementById('generateIdBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        const terminalLogs = document.getElementById('terminalLogs');
+        const clearTerminalBtn = document.getElementById('clearTerminalBtn');
+
+        // Reminder Modal DOM
+        const reminderModalOverlay = document.getElementById('reminderModalOverlay');
+        const closeReminderModalBtn = document.getElementById('closeReminderModalBtn');
+        const cancelReminderBtn = document.getElementById('cancelReminderBtn');
+        const sendReminderBtn = document.getElementById('sendReminderBtn');
+        const reminderLetterId = document.getElementById('reminderLetterId');
+        const reminderCurrentStatus = document.getElementById('reminderCurrentStatus');
+        const reminderToField = document.getElementById('reminderToField');
+        const reminderMessage = document.getElementById('reminderMessage');
+        let reminderTargetLetter = null;
+
+        // --- Initialize App ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const startTime = performance.now();
+                await db.init();
+                const latency = (performance.now() - startTime).toFixed(1);
+
+                dbStatusText.textContent = `Connected (IndexedDB, ${latency}ms)`;
+                dbStatusDot.style.background = 'var(--clr-success)';
+                dbStatusDot.style.boxShadow = '0 0 8px var(--clr-success)';
+
+                await db.addLog("Database engine connection established successfully.", "success");
+                await refreshData();
+            } catch (err) {
+                console.error("DB Init Error:", err);
+                dbStatusText.textContent = "Database Error";
+                dbStatusDot.style.background = 'var(--clr-danger)';
+                dbStatusDot.style.boxShadow = '0 0 8px var(--clr-danger)';
+                appendConsoleLog(`CRITICAL: Database initialization failed. ${err.message}`, 'danger');
+            }
+
+            // Event Listeners
+            openAddModalBtn.addEventListener('click', () => openModal());
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+            generateIdBtn.addEventListener('click', generateAndFillId);
+            letterForm.addEventListener('submit', handleFormSubmit);
+            clearTerminalBtn.addEventListener('click', handleClearLogs);
+
+            // Reminder modal listeners
+            closeReminderModalBtn.addEventListener('click', closeReminderModal);
+            cancelReminderBtn.addEventListener('click', closeReminderModal);
+            sendReminderBtn.addEventListener('click', handleSendReminder);
+
+            // Search / Filter / Sort listeners
+            searchInput.addEventListener('input', renderUI);
+            statusFilter.addEventListener('change', renderUI);
+            senderFilter.addEventListener('change', renderUI);
+            receiverFilter.addEventListener('change', renderUI);
+            slaFilter.addEventListener('change', renderUI);
+            dateFromFilter.addEventListener('change', renderUI);
+            dateToFilter.addEventListener('change', renderUI);
+            sortBy.addEventListener('change', renderUI);
+            clearFiltersBtn.addEventListener('click', clearAdvancedFilters);
+            importDataBtn.addEventListener('click', () => importFileInput.click());
+            importFileInput.addEventListener('change', handleImportFile);
+            notificationBtn.addEventListener('click', toggleNotificationPanel);
+            document.addEventListener('click', closeNotificationsOnOutsideClick);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeNotificationPanel();
+            });
+            if (bulkStatusSelect) bulkStatusSelect.addEventListener('change', updateBulkActionState);
+            if (applyBulkStatusBtn) applyBulkStatusBtn.addEventListener('click', handleApplyBulkStatus);
+
+            // View-toggle listeners
+            const tableViewBtn = document.getElementById('tableViewBtn');
+            const cardViewBtn = document.getElementById('cardViewBtn');
+            const tableWrapper = document.getElementById('tableWrapper');
+            const cardsGrid = document.getElementById('cardsGrid');
+
+            tableViewBtn.addEventListener('click', () => {
+                currentView = 'table';
+                tableViewBtn.classList.add('active');
+                cardViewBtn.classList.remove('active');
+                tableWrapper.classList.remove('hidden');
+                cardsGrid.classList.remove('active');
+                renderUI();
+            });
+            cardViewBtn.addEventListener('click', () => {
+                currentView = 'card';
+                cardViewBtn.classList.add('active');
+                tableViewBtn.classList.remove('active');
+                tableWrapper.classList.add('hidden');
+                cardsGrid.classList.add('active');
+                renderUI();
+            });
+        });
+
+
+        // --- Data Fetch & Logic ---
+        const SLA_DAYS = 3;
+
+        function toDateInputValue(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toISOString().slice(0, 10);
+        }
+
+        function addDays(date, days) {
+            const d = new Date(date);
+            d.setDate(d.getDate() + days);
+            return d;
+        }
+
+        function getDefaultDueDate(createdAt = new Date().toISOString()) {
+            return toDateInputValue(addDays(createdAt, SLA_DAYS));
+        }
+
+        function normalizeHistory(history, status, at) {
+            const list = Array.isArray(history) ? history : [];
+            const clean = list
+                .filter(item => item && item.status && item.at)
+                .map(item => ({ status: item.status, at: item.at, note: item.note || '' }));
+            if (!clean.length) {
+                clean.push({ status, at, note: 'Initial status' });
+            }
+            return clean;
+        }
+
+        function normalizeLetter(raw) {
+            const now = new Date().toISOString();
+            const status = ['Pending', 'In Transit', 'Delivered'].includes(raw.status) ? raw.status : 'Pending';
+            const updatedAt = raw.updatedAt || raw.lastUpdated || raw.LastUpdated || now;
+            const historyItems = Array.isArray(raw.history) ? raw.history.filter(item => item && item.at) : [];
+            const firstHistoryAt = historyItems
+                .map(item => item.at)
+                .sort()[0];
+            const createdAt = raw.createdAt || raw.CreatedAt || firstHistoryAt || updatedAt;
+            return {
+                id: String(raw.id || raw.ID || raw.letterId || '').trim().toUpperCase(),
+                sender: String(raw.sender || raw.Sender || '').trim(),
+                receiver: String(raw.receiver || raw.Receiver || '').trim(),
+                status,
+                priority: String(raw.priority || raw.Priority || 'Standard').trim() || 'Standard',
+                weight: raw.weight || raw.Weight || '',
+                dimensions: String(raw.dimensions || raw.Dimensions || '').trim(),
+                carrier: String(raw.carrier || raw.Carrier || '').trim(),
+                trackingNumber: String(raw.trackingNumber || raw.TrackingNumber || raw.tracking || '').trim(),
+                receiverContact: String(raw.receiverContact || raw.ReceiverContact || '').trim(),
+                notes: String(raw.notes || raw.Notes || '').trim(),
+                createdAt,
+                dueDate: raw.dueDate || raw.DueDate || getDefaultDueDate(createdAt),
+                updatedAt,
+                history: normalizeHistory(raw.history, status, updatedAt)
+            };
+        }
+
+        function appendStatusHistory(letter, newStatus, oldStatus, note = '') {
+            letter.history = normalizeHistory(letter.history, oldStatus || letter.status, letter.updatedAt || new Date().toISOString());
+            const last = letter.history[letter.history.length - 1];
+            const now = new Date().toISOString();
+            if (!last || last.status !== newStatus) {
+                letter.history.push({ status: newStatus, at: now, note });
+            }
+        }
+
+        function getSlaState(letter) {
+            if (letter.status === 'Delivered') return { key: 'Done', label: statusLabel('Delivered'), icon: 'ph-check-circle' };
+            if (!letter.dueDate) return { key: 'On Track', label: tr('on_track'), icon: 'ph-calendar' };
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(`${letter.dueDate}T00:00:00`);
+            const days = Math.round((due - today) / 86400000);
+            if (days < 0) return { key: 'Overdue', label: `${Math.abs(days)}d ${tr('overdue')}`, icon: 'ph-warning-circle' };
+            if (days === 0) return { key: 'Due Today', label: tr('due_today'), icon: 'ph-clock' };
+            return { key: 'On Track', label: `${days}d`, icon: 'ph-calendar-check' };
+        }
+
+        function getSlaClass(state) {
+            if (state.key === 'Overdue') return 'overdue';
+            if (state.key === 'Due Today') return 'due-today';
+            if (state.key === 'Done') return 'done';
+            return 'safe';
+        }
+
+        function makeSlaHTML(letter) {
+            const state = getSlaState(letter);
+            const dueText = letter.dueDate ? formatDateOnly(letter.dueDate) : 'Not set';
+            return `<div class="due-cell">
+                <span class="sla-badge ${getSlaClass(state)}"><i class="ph ${state.icon}"></i> ${state.label}</span>
+                <span class="due-date">${tr('due_date')}: ${escapeHTML(dueText)}</span>
+            </div>`;
+        }
+
+        function makeHistoryHTML(letter) {
+            const history = normalizeHistory(letter.history, letter.status, letter.updatedAt).slice(-4);
+            return `<div class="status-history">${history.map(item => `
+                <span class="history-chip" title="${escapeHTML(formatDateTime(item.at))}">
+                    <strong>${escapeHTML(statusLabel(item.status))}</strong> ${escapeHTML(shortDate(item.at))}
+                </span>`).join('')}</div>`;
+        }
+
+        function formatDateOnly(value) {
+            if (!value) return 'Not set';
+            const d = new Date(`${value}T00:00:00`);
+            if (Number.isNaN(d.getTime())) return value;
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function shortDate(value) {
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        function populateBranchFilters() {
+            const preserveSender = senderFilter.value;
+            const preserveReceiver = receiverFilter.value;
+            const senders = [...new Set(allLetters.map(l => l.sender).filter(Boolean))].sort();
+            const receivers = [...new Set(allLetters.map(l => l.receiver).filter(Boolean))].sort();
+            let senderLabel = 'All Senders', receiverLabel = 'All Receivers';
+            try {
+                senderLabel = tr('all_senders');
+                receiverLabel = tr('all_receivers');
+            } catch (_) { }
+            senderFilter.innerHTML = `<option value="All">${senderLabel}</option>${senders.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('')}`;
+            receiverFilter.innerHTML = `<option value="All">${receiverLabel}</option>${receivers.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('')}`;
+            senderFilter.value = senders.includes(preserveSender) ? preserveSender : 'All';
+            receiverFilter.value = receivers.includes(preserveReceiver) ? preserveReceiver : 'All';
+        }
+
+        function clearAdvancedFilters() {
+            searchInput.value = '';
+            statusFilter.value = 'All';
+            senderFilter.value = 'All';
+            receiverFilter.value = 'All';
+            slaFilter.value = 'All';
+            dateFromFilter.value = '';
+            dateToFilter.value = '';
+            sortBy.value = 'updatedAt-desc';
+            renderUI();
+        }
+
+        function toggleNotificationPanel(event) {
+            event.stopPropagation();
+            const isOpen = notificationPanel.classList.toggle('active');
+            notificationBtn.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) renderNotificationCenter();
+        }
+
+        function closeNotificationPanel() {
+            notificationPanel.classList.remove('active');
+            notificationBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        function closeNotificationsOnOutsideClick(event) {
+            if (notificationPanel.contains(event.target) || notificationBtn.contains(event.target)) return;
+            closeNotificationPanel();
+        }
+
+        function getNotificationItems() {
+            const urgent = [];
+            const recent = [];
+            allLetters.forEach(letter => {
+                const sla = getSlaState(letter);
+                if (sla.key === 'Overdue') {
+                    urgent.push({
+                        id: letter.id,
+                        type: 'overdue',
+                        icon: 'ph-warning-circle',
+                        title: `${letter.id} • ${tr('overdue')}`,
+                        meta: `${letter.sender} to ${letter.receiver} â€¢ ${sla.label}`
+                    });
+                } else if (sla.key === 'Due Today') {
+                    urgent.push({
+                        id: letter.id,
+                        type: 'due-today',
+                        icon: 'ph-clock-countdown',
+                        title: `${letter.id} • ${tr('due_today')}`,
+                        meta: `${letter.sender} to ${letter.receiver} â€¢ ${statusLabel(letter.status)}`
+                    });
+                }
+
+                const updatedMs = Date.now() - new Date(letter.updatedAt).getTime();
+                if (updatedMs <= 24 * 60 * 60 * 1000) {
+                    recent.push({
+                        id: letter.id,
+                        type: 'info',
+                        icon: getStatusIcon(letter.status).replace('ph ', ''),
+                        title: `${letter.id} • ${tr('latest_updated')}`,
+                        meta: `${statusLabel(letter.status)} â€¢ ${formatDateTime(letter.updatedAt)}`
+                    });
+                }
+            });
+
+            recent.sort((a, b) => new Date(allLetters.find(l => l.id === b.id)?.updatedAt || 0) - new Date(allLetters.find(l => l.id === a.id)?.updatedAt || 0));
+            return [...urgent, ...recent.filter(item => !urgent.some(u => u.id === item.id))].slice(0, 10);
+        }
+
+        function renderNotificationCenter() {
+            const items = getNotificationItems();
+            const urgentCount = items.filter(item => item.type === 'overdue' || item.type === 'due-today').length;
+            notificationCount.textContent = urgentCount > 9 ? '9+' : String(urgentCount);
+            notificationCount.classList.toggle('active', urgentCount > 0);
+            notificationSummary.textContent = urgentCount
+                ? `${urgentCount} needs attention`
+                : items.length ? `${items.length} ${tr('latest_updated')}` : tr('all_clear');
+
+            if (!items.length) {
+                notificationList.innerHTML = `<div class="notification-empty">${tr('all_clear')}</div>`;
+                return;
+            }
+
+            notificationList.innerHTML = items.map(item => `
+                <button class="notification-item ${item.type}" data-id="${escapeHTML(item.id)}">
+                    <span class="notification-icon"><i class="ph ${escapeHTML(item.icon)}"></i></span>
+                    <span>
+                        <span class="notification-title">${escapeHTML(item.title)}</span>
+                        <span class="notification-meta">${escapeHTML(item.meta)}</span>
+                    </span>
+                </button>`).join('');
+
+            notificationList.querySelectorAll('.notification-item').forEach(btn => {
+                btn.addEventListener('click', () => focusShipmentFromNotification(btn.getAttribute('data-id')));
+            });
+        }
+
+        function focusShipmentFromNotification(id) {
+            closeNotificationPanel();
+            searchInput.value = id;
+            statusFilter.value = 'All';
+            senderFilter.value = 'All';
+            receiverFilter.value = 'All';
+            slaFilter.value = 'All';
+            dateFromFilter.value = '';
+            dateToFilter.value = '';
+            renderUI();
+            setTimeout(() => {
+                const checkbox = Array.from(document.querySelectorAll('[data-id]')).find(el => el.getAttribute('data-id') === id);
+                const row = checkbox?.closest('tr, .shipment-card');
+                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }
+
+        async function refreshData() {
+            try {
+                allLetters = (await db.getAllLetters()).map(normalizeLetter).filter(l => l.id && l.sender && l.receiver);
+                if (allLetters.length === 0 && !localStorage.getItem('sfySeeded')) {
+                    const defaultShipments = [
+                        normalizeLetter({ id: 'LT-1024', sender: 'Berlin Hub', receiver: 'Paris Central', status: 'In Transit', updatedAt: new Date(Date.now() - 7200000).toISOString() }),
+                        normalizeLetter({ id: 'LT-2048', sender: 'Amsterdam Hub', receiver: 'Munich Distribution', status: 'Pending', updatedAt: new Date(Date.now() - 18000000).toISOString() }),
+                        normalizeLetter({ id: 'LT-4096', sender: 'Madrid Gateway', receiver: 'Barcelona Dispatch', status: 'Delivered', updatedAt: new Date(Date.now() - 86400000).toISOString() }),
+                        normalizeLetter({ id: 'LT-5120', sender: 'Lisbon Hub', receiver: 'Porto Distribution', status: 'In Transit', updatedAt: new Date(Date.now() - 3600000).toISOString() }),
+                        normalizeLetter({ id: 'LT-8192', sender: 'Rome Depot', receiver: 'Naples Office', status: 'Delivered', updatedAt: new Date(Date.now() - 43200000).toISOString() }),
+                        normalizeLetter({ id: 'LT-9099', sender: 'Warsaw Center', receiver: 'Krakow Terminal', status: 'Pending', updatedAt: new Date().toISOString() })
+                    ];
+                    for (const item of defaultShipments) {
+                        await db.saveLetter(item);
+                    }
+                    await db.addLog("Database seeded with default shipments.", "info");
+                    allLetters = (await db.getAllLetters()).map(normalizeLetter).filter(l => l.id && l.sender && l.receiver);
+                }
+                localStorage.setItem('sfySeeded', 'true');
+                populateBranchFilters();
+                renderUI();
+                await renderConsoleLogs();
+            } catch (err) {
+                appendConsoleLog(`Error retrieving letter data: ${err.message}`, 'danger');
+            }
+        }
+        function renderUI() {
+            // Apply filtering
+            const searchVal = searchInput.value.trim().toLowerCase();
+            const filterVal = statusFilter.value;
+            const senderVal = senderFilter.value;
+            const receiverVal = receiverFilter.value;
+            const slaVal = slaFilter.value;
+            const fromVal = dateFromFilter.value;
+            const toVal = dateToFilter.value;
+            const sortVal = sortBy.value;
+
+            let filtered = allLetters.filter(letter => {
+                const matchesSearch =
+                    letter.id.toLowerCase().includes(searchVal) ||
+                    letter.sender.toLowerCase().includes(searchVal) ||
+                    letter.receiver.toLowerCase().includes(searchVal) ||
+                    String(letter.priority || '').toLowerCase().includes(searchVal) ||
+                    String(letter.carrier || '').toLowerCase().includes(searchVal) ||
+                    String(letter.trackingNumber || '').toLowerCase().includes(searchVal) ||
+                    String(letter.receiverContact || '').toLowerCase().includes(searchVal) ||
+                    String(letter.notes || '').toLowerCase().includes(searchVal);
+                const matchesStatus = filterVal === 'All' ||
+                    (filterVal === 'Undelivered' && letter.status !== 'Delivered') ||
+                    letter.status === filterVal;
+                const matchesSender = senderVal === 'All' || letter.sender === senderVal;
+                const matchesReceiver = receiverVal === 'All' || letter.receiver === receiverVal;
+                const matchesSla = slaVal === 'All' || getSlaState(letter).key === slaVal;
+                const updatedDate = toDateInputValue(letter.updatedAt);
+                const matchesFrom = !fromVal || updatedDate >= fromVal;
+                const matchesTo = !toVal || updatedDate <= toVal;
+
+                return matchesSearch && matchesStatus && matchesSender && matchesReceiver && matchesSla && matchesFrom && matchesTo;
+            });
+
+            // Apply sorting
+            filtered.sort((a, b) => {
+                if (sortVal === 'updatedAt-desc') return new Date(b.updatedAt) - new Date(a.updatedAt);
+                if (sortVal === 'updatedAt-asc') return new Date(a.updatedAt) - new Date(b.updatedAt);
+                if (sortVal === 'dueDate-asc') return String(a.dueDate || '').localeCompare(String(b.dueDate || ''));
+                if (sortVal === 'dueDate-desc') return String(b.dueDate || '').localeCompare(String(a.dueDate || ''));
+                if (sortVal === 'id-asc') return a.id.localeCompare(b.id);
+                if (sortVal === 'id-desc') return b.id.localeCompare(a.id);
+                return 0;
+            });
+
+            updateStats();
+            renderNotificationCenter();
+
+            if (currentView === 'card') {
+                renderCards(filtered);
+            } else {
+                renderTable(filtered);
+            }
+        }
+
+        // Branch → country flag emoji mapping
+        const BRANCH_FLAGS = {
+            'Berlin Hub': '\u{1F1E9}\u{1F1EA}',
+            'Munich Distribution': '\u{1F1E9}\u{1F1EA}',
+            'Paris Central': '\u{1F1EB}\u{1F1F7}',
+            'Lyon Sorting': '\u{1F1EB}\u{1F1F7}',
+            'Rome Depot': '\u{1F1EE}\u{1F1F9}',
+            'Naples Office': '\u{1F1EE}\u{1F1F9}',
+            'Madrid Gateway': '\u{1F1EA}\u{1F1F8}',
+            'Barcelona Dispatch': '\u{1F1EA}\u{1F1F8}',
+            'Vienna Post': '\u{1F1E6}\u{1F1F9}',
+            'Amsterdam Hub': '\u{1F1F3}\u{1F1F1}',
+            'Warsaw Center': '\u{1F1F5}\u{1F1F1}',
+            'Krakow Terminal': '\u{1F1F5}\u{1F1F1}',
+            'Prague Station': '\u{1F1E8}\u{1F1FF}',
+            'Athens Courier': '\u{1F1EC}\u{1F1F7}',
+            'Thessaloniki Depot': '\u{1F1EC}\u{1F1F7}',
+            'Lisbon Hub': '\u{1F1F5}\u{1F1F9}',
+            'Porto Distribution': '\u{1F1F5}\u{1F1F9}',
+            'Zurich HQ': '\u{1F1E8}\u{1F1ED}',
+            'Brussels Relay': '\u{1F1E7}\u{1F1EA}',
+            'Bratislava Post': '\u{1F1F8}\u{1F1F0}',
+        };
+
+        function branchFlag(name) {
+            return BRANCH_FLAGS[name] || '\u{1F4CD}';
+        }
+
+        function makeStepperHTML(status) {
+            const steps = [
+                { key: 'Pending', icon: 'ph-clock', label: statusLabel('Pending') },
+                { key: 'In Transit', icon: 'ph-truck', label: statusLabel('In Transit') },
+                { key: 'Delivered', icon: 'ph-check', label: statusLabel('Delivered') },
+            ];
+            const activeIdx = steps.findIndex(s => s.key === status);
+            let html = '<div class="stepper">';
+            steps.forEach((step, i) => {
+                const isDone = i < activeIdx;
+                const isActive = i === activeIdx;
+                const cls = isDone ? 'done' : isActive ? 'active' : '';
+                html += `<div class="step ${cls}">
+                    <div class="step-dot"><i class="ph ${step.icon}"></i></div>
+                    <div class="step-label">${step.label}</div>
+                </div>`;
+                if (i < steps.length - 1) {
+                    const lineCls = isDone ? 'done' : isActive ? 'active' : '';
+                    html += `<div class="step-line ${lineCls}"></div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function formatDeliveryAverage(days) {
+            if (days === null || days === undefined) return '0d';
+            if (days < 0.0417) return '1h';
+            if (days < 1) return `${Math.round(days * 24)}h`;
+            return `${days.toFixed(1)}d`;
+        }
+
+        // Current view mode: 'table' | 'card'
+        let currentView = 'table';
+
+        function renderTable(filtered) {
+            letterTableBody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            filtered.forEach(letter => {
+                const row = document.createElement('tr');
+
+                let flowActionHTML = '';
+                if (letter.status === 'Pending') {
+                    flowActionHTML = `<button class="action-btn flow" onclick="updateStatusQuick('${letter.id}', 'In Transit')" title="Set In Transit"><i class="ph ph-truck"></i> Ship</button>`;
+                } else if (letter.status === 'In Transit') {
+                    flowActionHTML = `<button class="action-btn flow" onclick="updateStatusQuick('${letter.id}', 'Delivered')" title="Set Delivered"><i class="ph ph-check"></i> Deliver</button>`;
+                }
+
+                const reminderBtnHTML = letter.status !== 'Delivered'
+                    ? `<button class="action-btn remind" onclick="openReminderModal('${escapeHTML(letter.id)}')" title="Send Delivery Reminder"><i class="ph ph-bell-ringing"></i> Remind</button>`
+                    : '';
+
+                const sFlag = branchFlag(letter.sender);
+                const rFlag = branchFlag(letter.receiver);
+
+                row.innerHTML = `
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="row-checkbox" data-id="${escapeHTML(letter.id)}"
+                            aria-label="Select shipment ${escapeHTML(letter.id)}" ${selectedIds.has(letter.id) ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <div class="letter-id">
+                            ${escapeHTML(letter.id)}
+                            <button class="copy-btn" onclick="copyText('${escapeHTML(letter.id)}', this)" title="Copy ID">
+                                <i class="ph ph-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="route-cell">
+                            <span class="branch-flag">${sFlag}</span>
+                            <span class="branch-name">${escapeHTML(letter.sender)}</span>
+                            <span class="route-arrow">â†’</span>
+                            <span class="branch-flag">${rFlag}</span>
+                            <span class="branch-name">${escapeHTML(letter.receiver)}</span>
+                        </div>
+                    </td>
+                    <td>${makeStepperHTML(letter.status)}${makeHistoryHTML(letter)}</td>
+                    <td><span class="badge ${getStatusClass(letter.status)}"><i class="${getStatusIcon(letter.status)}"></i> ${statusLabel(letter.status)}</span></td>
+                    <td>${escapeHTML(letter.priority || 'Standard')}</td>
+                    <td>${escapeHTML(letter.carrier || '—')}</td>
+                    <td>${makeSlaHTML(letter)}</td>
+                    <td class="time-cell">${formatDateTime(letter.updatedAt)}</td>
+                    <td class="actions-cell">
+                        ${flowActionHTML}
+                        ${reminderBtnHTML}
+                        <button class="action-btn" onclick="openModal('${escapeHTML(letter.id)}')" title="Edit Shipment"><i class="ph ph-pencil-simple"></i></button>
+                        <button class="action-btn delete" onclick="deleteShipment('${escapeHTML(letter.id)}')" title="Delete Shipment"><i class="ph ph-trash"></i></button>
+                    </td>
+                `;
+                row.querySelector('.row-checkbox').addEventListener('change', (e) => {
+                    toggleRowSelection(letter.id, e.target.checked);
+                });
+                letterTableBody.appendChild(row);
+            });
+
+            updateSelectAllCheckboxState(filtered);
+        }
+
+        function renderCards(filtered) {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-secondary);"><img src="empty_state.png" style="width:120px;opacity:0.8;margin-bottom:1rem;"><br><strong>No shipments found</strong></div>`;
+                return;
+            }
+
+            filtered.forEach(letter => {
+                const card = document.createElement('div');
+                const statusCls = getStatusClass(letter.status);
+                card.className = `shipment-card ${statusCls}`;
+
+                let flowBtn = '';
+                if (letter.status === 'Pending') {
+                    flowBtn = `<button class="action-btn flow" onclick="updateStatusQuick('${letter.id}','In Transit')" title="Ship"><i class="ph ph-truck"></i> Ship</button>`;
+                } else if (letter.status === 'In Transit') {
+                    flowBtn = `<button class="action-btn flow" onclick="updateStatusQuick('${letter.id}','Delivered')" title="Deliver"><i class="ph ph-check"></i> Deliver</button>`;
+                }
+
+                const sFlag = branchFlag(letter.sender);
+                const rFlag = branchFlag(letter.receiver);
+
+                card.innerHTML = `
+                    <input type="checkbox" class="row-checkbox card-select-checkbox" data-id="${escapeHTML(letter.id)}"
+                        aria-label="Select shipment ${escapeHTML(letter.id)}" ${selectedIds.has(letter.id) ? 'checked' : ''}>
+                    <div class="card-header">
+                        <div>
+                            <div class="card-id">${escapeHTML(letter.id)}</div>
+                        </div>
+                        <span class="badge ${statusCls}"><i class="${getStatusIcon(letter.status)}"></i> ${statusLabel(letter.status)}</span>
+                    </div>
+                    <div class="card-route">
+                        <div class="card-branch">
+                            <div class="card-branch-icon">${sFlag}</div>
+                            <div style="font-size:0.8rem;">${escapeHTML(letter.sender)}</div>
+                        </div>
+                        <div class="card-arrow" style="flex-grow:1;margin:0 0.5rem;"></div>
+                        <div class="card-branch">
+                            <div style="font-size:0.8rem;">${escapeHTML(letter.receiver)}</div>
+                            <div class="card-branch-icon">${rFlag}</div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.5rem;margin:0.8rem 0;">
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Priority:</strong> ${escapeHTML(letter.priority || 'Standard')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Carrier:</strong> ${escapeHTML(letter.carrier || '—')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Weight:</strong> ${escapeHTML(letter.weight ? String(letter.weight) : '—')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Dimensions:</strong> ${escapeHTML(letter.dimensions || '—')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Tracking:</strong> ${escapeHTML(letter.trackingNumber || '—')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);"><strong>Contact:</strong> ${escapeHTML(letter.receiverContact || '—')}</div>
+                    </div>
+                    ${makeStepperHTML(letter.status)}
+                    ${makeHistoryHTML(letter)}
+                    ${makeSlaHTML(letter)}
+                    ${letter.notes ? `<div style="margin:0.75rem 0 0.3rem;font-size:0.82rem;color:var(--text-secondary);"><strong>Notes:</strong> ${escapeHTML(letter.notes)}</div>` : ''}
+                    <div class="card-footer">
+                        <div class="card-time"><i class="ph ph-clock" style="margin-right:0.2rem;"></i>${formatDateTime(letter.updatedAt)}</div>
+                        <div class="card-actions">
+                            ${flowBtn}
+                            ${letter.status !== 'Delivered' ? `<button class="action-btn remind" onclick="openReminderModal('${escapeHTML(letter.id)}')" title="Remind"><i class="ph ph-bell-ringing"></i></button>` : ''}
+                            <button class="action-btn" onclick="openModal('${escapeHTML(letter.id)}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="action-btn delete" onclick="deleteShipment('${escapeHTML(letter.id)}')" title="Delete"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                card.querySelector('.card-select-checkbox').addEventListener('change', (e) => {
+                    toggleRowSelection(letter.id, e.target.checked);
+                });
+                grid.appendChild(card);
+            });
+
+            updateSelectAllCheckboxState(filtered);
+        }
+
+        function updateStats() {
+            let total = allLetters.length;
+            let pending = allLetters.filter(l => l.status === 'Pending').length;
+            let transit = allLetters.filter(l => l.status === 'In Transit').length;
+            let delivered = allLetters.filter(l => l.status === 'Delivered').length;
+            let undelivered = pending + transit;
+            const slaRisk = allLetters.filter(l => getSlaState(l).key === 'Overdue' || getSlaState(l).key === 'Due Today').length;
+            const deliveredDays = allLetters
+                .filter(l => l.status === 'Delivered' && l.createdAt && l.updatedAt)
+                .map(l => (new Date(l.updatedAt) - new Date(l.createdAt)) / 86400000);
+            const avgDelivery = deliveredDays.length ? deliveredDays.reduce((sum, val) => sum + val, 0) / deliveredDays.length : 0;
+            const avgDeliveryText = formatDeliveryAverage(avgDelivery);
+
+            statTotal.textContent = total;
+            statPending.textContent = pending;
+            statTransit.textContent = transit;
+            statDelivered.textContent = delivered;
+            document.getElementById('statSlaRisk').textContent = slaRisk;
+            document.getElementById('statAvgDelivery').textContent = avgDeliveryText;
+
+            // Update hero counters
+            const heroTotal = document.getElementById('heroTotal');
+            const heroTransit = document.getElementById('heroTransit');
+            const heroDelivered = document.getElementById('heroDelivered');
+            if (heroTotal) heroTotal.textContent = total;
+            if (heroTransit) heroTransit.textContent = transit;
+            if (heroDelivered) heroDelivered.textContent = delivered;
+
+            // Pulse the Not-Delivered card if there are any
+            const card = document.getElementById('statUndeliveredCard');
+            if (card) {
+                if (undelivered > 0) {
+                    card.classList.add('remind-pulse');
+                } else {
+                    card.classList.remove('remind-pulse');
+                }
+            }
+        }
+
+        function filterUndelivered() {
+            statusFilter.value = 'Undelivered';
+            searchInput.value = '';
+            renderUI();
+            showToast('Filtered to all undelivered shipments.', 'warn');
+        }
+
+        // --- Console Log Functions ---
+        async function renderConsoleLogs() {
+            try {
+                const logs = await db.getLogs(50);
+                terminalLogs.innerHTML = '';
+                if (logs.length === 0) {
+                    terminalLogs.innerHTML = `<div class="terminal-log-line"><span class="log-time">[System Status]</span> Ready. No database activity recorded.</div>`;
+                    return;
+                }
+                logs.forEach(log => {
+                    appendLineToConsoleDom(log);
+                });
+            } catch (err) {
+                console.error("Failed to render logs:", err);
+            }
+        }
+
+        function appendLineToConsoleDom(log) {
+            const line = document.createElement('div');
+            line.className = 'terminal-log-line';
+            const localTime = new Date(log.timestamp).toLocaleTimeString();
+
+            line.innerHTML = `
+                <span class="log-time">[${localTime}]</span>
+                <span class="log-tag ${log.type}">[${log.type.toUpperCase()}]</span>
+                <span class="log-message">${escapeHTML(log.message)}</span>
+            `;
+            terminalLogs.appendChild(line);
+            terminalLogs.scrollTop = terminalLogs.scrollHeight;
+        }
+
+        async function appendConsoleLog(message, type = 'info') {
+            await db.addLog(message, type);
+            appendLineToConsoleDom({
+                message,
+                type,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        async function handleClearLogs() {
+            if (confirm("Are you sure you want to clear the activity log database?")) {
+                await db.clearLogs();
+                await db.addLog("Database history purged.", "warn");
+                await renderConsoleLogs();
+            }
+        }
+
+        // --- Modal & Form Actions ---
+        function openModal(id = null) {
+            editingId = id;
+            generateIdBtn.style.display = id ? 'none' : 'block';
+            letterIdInput.disabled = id ? true : false;
+
+            if (id) {
+                // Edit mode
+                modalTitle.textContent = "Edit Shipment";
+                const letter = allLetters.find(l => l.id === id);
+                if (letter) {
+                    letterIdInput.value = letter.id;
+                    senderInput.value = letter.sender;
+                    receiverInput.value = letter.receiver;
+                    statusInput.value = letter.status;
+                    dueDateInput.value = letter.dueDate || '';
+                    priorityInput.value = letter.priority || 'Standard';
+                    weightInput.value = letter.weight || '';
+                    dimensionsInput.value = letter.dimensions || '';
+                    carrierInput.value = letter.carrier || '';
+                    trackingNumberInput.value = letter.trackingNumber || '';
+                    receiverContactInput.value = letter.receiverContact || '';
+                    notesInput.value = letter.notes || '';
+                }
+            } else {
+                // Add mode
+                modalTitle.textContent = tr('add_letter');
+                letterForm.reset();
+                generateAndFillId();
+                dueDateInput.value = getDefaultDueDate();
+                priorityInput.value = 'Standard';
+                weightInput.value = '';
+                dimensionsInput.value = '';
+                carrierInput.value = '';
+                trackingNumberInput.value = '';
+                receiverContactInput.value = '';
+                notesInput.value = '';
+            }
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            editingId = null;
+        }
+
+        function generateAndFillId() {
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            letterIdInput.value = `LT-${rand}`;
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const id = letterIdInput.value.trim().toUpperCase();
+            const sender = senderInput.value.trim();
+            const receiver = receiverInput.value.trim();
+            const status = statusInput.value;
+            const dueDate = dueDateInput.value || getDefaultDueDate();
+            const priority = priorityInput.value || 'Standard';
+            const weight = weightInput.value ? Number(weightInput.value) : '';
+            const dimensions = dimensionsInput.value.trim();
+            const carrier = carrierInput.value.trim();
+            const trackingNumber = trackingNumberInput.value.trim();
+            const receiverContact = receiverContactInput.value.trim();
+            const notes = notesInput.value.trim();
+
+            if (!id || !sender || !receiver) {
+                alert("Please fill all required fields.");
+                return;
+            }
+
+            // Check duplicate ID in add mode
+            if (!editingId && allLetters.some(l => l.id === id)) {
+                alert(`Letter ID ${id} already exists. Please choose a unique ID.`);
+                appendConsoleLog(`INSERT FAIL: ID duplicate collision on '${id}'`, 'danger');
+                return;
+            }
+
+            const existing = editingId ? allLetters.find(l => l.id === editingId) : null;
+            const now = new Date().toISOString();
+            const letterData = {
+                id,
+                sender,
+                receiver,
+                status,
+                priority,
+                weight,
+                dimensions,
+                carrier,
+                trackingNumber,
+                receiverContact,
+                notes,
+                createdAt: existing?.createdAt || now,
+                dueDate,
+                updatedAt: now,
+                history: existing ? normalizeHistory(existing.history, existing.status, existing.updatedAt) : []
+            };
+
+            if (existing && existing.status !== status) {
+                appendStatusHistory(letterData, status, existing.status, 'Edited manually');
+            } else if (!letterData.history.length) {
+                letterData.history.push({ status, at: now, note: 'Created' });
+            }
+
+            try {
+                await db.saveLetter(letterData);
+                closeModal();
+
+                if (editingId) {
+                    await appendConsoleLog(`Record updated: ${id} [Status: ${status}]`, 'success');
+                } else {
+                    await appendConsoleLog(`New entry added: ${id} [Sender: ${sender}, Receiver: ${receiver}]`, 'success');
+                }
+
+                await refreshData();
+            } catch (err) {
+                alert(`Database transaction failed: ${err.message}`);
+                await appendConsoleLog(`TRANSACTION ERROR: ${err.message}`, 'danger');
+            }
+        }
+
+        async function updateStatusQuick(id, newStatus) {
+            try {
+                const letter = allLetters.find(l => l.id === id);
+                if (!letter) return;
+
+                const oldStatus = letter.status;
+                appendStatusHistory(letter, newStatus, oldStatus, 'Quick status update');
+                letter.status = newStatus;
+                letter.updatedAt = new Date().toISOString();
+
+                await db.saveLetter(letter);
+                await appendConsoleLog(`Status changed for ${id}: ${oldStatus} âžœ ${newStatus}`, 'success');
+                await refreshData();
+            } catch (err) {
+                await appendConsoleLog(`STATUS SHIFT ERROR: ${err.message}`, 'danger');
+            }
+        }
+
+        async function deleteShipment(id) {
+            if (confirm(`Are you sure you want to delete shipment ${id} permanently?`)) {
+                try {
+                    await db.deleteLetter(id);
+                    await appendConsoleLog(`Deleted record: ${id} successfully removed.`, 'warn');
+                    await refreshData();
+                } catch (err) {
+                    await appendConsoleLog(`DELETE TRANSACTION FAILED: ${err.message}`, 'danger');
+                }
+            }
+        }
+
+        // --- Bulk Selection & Bulk Delete ---
+        function toggleRowSelection(id, isChecked) {
+            if (isChecked) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+            updateBulkDeleteButtonState();
+
+            // Keep the select-all checkbox in sync with whatever is currently rendered on screen
+            const renderedIds = Array.from(document.querySelectorAll('.row-checkbox')).map(cb => cb.getAttribute('data-id'));
+            updateSelectAllCheckboxState(renderedIds.map(rid => ({ id: rid })));
+        }
+
+        function updateBulkDeleteButtonState() {
+            if (!bulkDeleteBtn) return;
+            bulkDeleteBtn.disabled = selectedIds.size === 0;
+            let bulkLabel = 'Bulk Delete';
+            try { bulkLabel = tr('bulk_delete'); } catch (_) { }
+            bulkDeleteBtn.innerHTML = selectedIds.size > 0
+                ? `<i class="ph ph-trash" aria-hidden="true"></i> ${bulkLabel} (${selectedIds.size})`
+                : `<i class="ph ph-trash" aria-hidden="true"></i> ${bulkLabel}`;
+            updateBulkActionState();
+        }
+
+        function updateBulkActionState() {
+            if (!applyBulkStatusBtn || !bulkStatusSelect) return;
+            applyBulkStatusBtn.disabled = selectedIds.size === 0 || !bulkStatusSelect.value;
+        }
+
+        async function handleApplyBulkStatus() {
+            if (!bulkStatusSelect || !bulkStatusSelect.value || selectedIds.size === 0) return;
+            const newStatus = bulkStatusSelect.value;
+            if (!confirm(`Update ${selectedIds.size} selected shipment(s) to ${newStatus}?`)) return;
+            const updated = [];
+            for (const id of Array.from(selectedIds)) {
+                const letter = allLetters.find(l => l.id === id);
+                if (!letter) continue;
+                const oldStatus = letter.status;
+                if (oldStatus === newStatus) continue;
+                appendStatusHistory(letter, newStatus, oldStatus, 'Bulk status update');
+                letter.status = newStatus;
+                letter.updatedAt = new Date().toISOString();
+                try {
+                    await db.saveLetter(letter);
+                    updated.push(id);
+                } catch (err) {
+                    await appendConsoleLog(`BULK STATUS UPDATE FAILED for ${id}: ${err.message}`, 'danger');
+                }
+            }
+            if (updated.length) {
+                await appendConsoleLog(`Bulk status updated ${updated.length} shipment(s) to ${newStatus}.`, 'success');
+                showToast(`Updated ${updated.length} shipment(s) to ${newStatus}.`, 'success');
+            }
+            selectedIds.clear();
+            if (selectAllCheckbox) { selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = false; }
+            bulkStatusSelect.value = '';
+            updateBulkDeleteButtonState();
+            await refreshData();
+        }
+
+        function updateSelectAllCheckboxState(renderedLetters) {
+            if (!selectAllCheckbox) return;
+            const renderedIds = renderedLetters.map(l => l.id);
+            if (renderedIds.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                return;
+            }
+            const selectedCount = renderedIds.filter(id => selectedIds.has(id)).length;
+            selectAllCheckbox.checked = selectedCount === renderedIds.length;
+            selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < renderedIds.length;
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.row-checkbox');
+                checkboxes.forEach(cb => {
+                    const id = cb.getAttribute('data-id');
+                    cb.checked = e.target.checked;
+                    if (e.target.checked) {
+                        selectedIds.add(id);
+                    } else {
+                        selectedIds.delete(id);
+                    }
+                });
+                updateBulkDeleteButtonState();
+            });
+        }
+
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', async () => {
+                const idsToDelete = Array.from(selectedIds);
+                if (idsToDelete.length === 0) return;
+
+                const confirmMsg = idsToDelete.length === 1
+                    ? `Are you sure you want to delete shipment ${idsToDelete[0]} permanently?`
+                    : `Are you sure you want to delete ${idsToDelete.length} selected shipments permanently?`;
+
+                if (!confirm(confirmMsg)) return;
+
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const id of idsToDelete) {
+                    try {
+                        await db.deleteLetter(id);
+                        successCount++;
+                    } catch (err) {
+                        failCount++;
+                        await appendConsoleLog(`BULK DELETE FAILED for ${id}: ${err.message}`, 'danger');
+                    }
+                }
+
+                await appendConsoleLog(`Bulk delete: ${successCount} shipment(s) removed${failCount ? `, ${failCount} failed` : ''}.`, 'warn');
+                showToast(`ðŸ—‘ï¸ Deleted ${successCount} shipment${successCount === 1 ? '' : 's'}.`, successCount > 0 ? 'success' : 'danger');
+
+                selectedIds.clear();
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+                updateBulkDeleteButtonState();
+                await refreshData();
+            });
+        }
+
+        updateBulkDeleteButtonState();
+
+        // --- Reminder Modal Logic ---
+        function openReminderModal(id) {
+            reminderTargetLetter = allLetters.find(l => l.id === id);
+            if (!reminderTargetLetter) return;
+
+            const now = new Date();
+            const daysSince = Math.floor((now - new Date(reminderTargetLetter.updatedAt)) / 86400000);
+            const daysText = daysSince === 0 ? 'today' : daysSince === 1 ? '1 day ago' : `${daysSince} days ago`;
+
+            reminderLetterId.textContent = id;
+            reminderCurrentStatus.textContent = reminderTargetLetter.status;
+            reminderToField.textContent = `${reminderTargetLetter.receiver}`;
+            reminderMessage.value =
+                `Dear ${reminderTargetLetter.receiver},
+
+This is a reminder that Letter ID: ${id} dispatched from ${reminderTargetLetter.sender} to ${reminderTargetLetter.receiver} has NOT been delivered yet.
+
+Current Status: ${reminderTargetLetter.status}
+Last Updated: ${formatDateTime(reminderTargetLetter.updatedAt)} (${daysText})
+
+Kindly investigate and confirm delivery at your earliest convenience.
+
+Thank you,
+Letter Delivery Tracking System`;
+
+            reminderModalOverlay.classList.add('active');
+        }
+
+        function closeReminderModal() {
+            reminderModalOverlay.classList.remove('active');
+            reminderTargetLetter = null;
+        }
+
+        async function handleSendReminder() {
+            if (!reminderTargetLetter) return;
+            const msg = reminderMessage.value.trim();
+            if (!msg) { showToast('Please enter a reminder message.', 'error'); return; }
+
+            const id = reminderTargetLetter.id;
+            const receiver = reminderTargetLetter.receiver;
+
+            await appendConsoleLog(`REMINDER SENT â†’ [${id}] to "${receiver}": "${msg.substring(0, 80)}..."`, 'warn');
+            closeReminderModal();
+            showToast(`Reminder sent to "${receiver}" for letter ${id}.`, 'success');
+        }
+
+        // --- Toast Notification (rich two-line) ---
+        const TOAST_TITLES = {
+            success: 'Success',
+            warn: 'Attention',
+            error: 'Error'
+        };
+        function showToast(message, type = 'success', subtitle = '') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'warn' ? 'toast-warn' : type === 'error' ? 'toast-error' : ''}`;
+            toast.style.cursor = 'default';
+
+            const iconMap = { success: 'ph-check-circle', warn: 'ph-warning-circle', error: 'ph-x-circle' };
+            const iconColor = type === 'warn' ? 'var(--clr-warning)' : type === 'error' ? 'var(--clr-danger)' : 'var(--clr-success)';
+            const title = TOAST_TITLES[type] || 'Info';
+            // Split emoji from text if present
+            const parts = message.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u{1F300}-\u{1FFFF}]\s?)?(.+)/u);
+            const emoji = parts && parts[1] ? parts[1].trim() : '';
+            const text = parts && parts[2] ? parts[2].trim() : message;
+
+            toast.innerHTML = `
+                <i class="ph-bold ${iconMap[type] || 'ph-check-circle'}" style="color:${iconColor};font-size:1.4rem;flex-shrink:0;"></i>
+                <div class="toast-body">
+                    <div class="toast-title">${emoji ? emoji + ' ' : ''}${escapeHTML(title)}</div>
+                    <div class="toast-msg">${escapeHTML(text)}</div>
+                    ${subtitle ? `<div class="toast-msg" style="margin-top:0.1rem;opacity:0.7;">${escapeHTML(subtitle)}</div>` : ''}
+                </div>
+                <button class="toast-close" onclick="this.closest('.toast').remove()" aria-label="Close">
+                    <i class="ph ph-x"></i>
+                </button>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(40px)';
+                setTimeout(() => toast.remove(), 450);
+            }, 5000);
+        }
+
+        // --- Helpers ---
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g,
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'Pending': return 'pending';
+                case 'In Transit': return 'transit';
+                case 'Delivered': return 'delivered';
+                default: return '';
+            }
+        }
+
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'Pending': return 'ph ph-clock';
+                case 'In Transit': return 'ph ph-truck';
+                case 'Delivered': return 'ph ph-circle-wavy-check';
+                default: return 'ph ph-package';
+            }
+        }
+
+        function formatDateTime(isoString) {
+            const d = new Date(isoString);
+            return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        function copyText(text, btnElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = btnElement.querySelector('i');
+                icon.className = 'ph ph-check';
+                icon.style.color = 'var(--clr-success)';
+
+                setTimeout(() => {
+                    icon.className = 'ph ph-copy';
+                    icon.style.color = '';
+                }, 1500);
+            }).catch(err => {
+                console.error("Failed to copy text: ", err);
+            });
+        }
+    </script>
+
+    <!-- ===== FEATURE SCRIPTS ===== -->
+    <script>
+        // ============================================================
+        // 1. AUTHENTICATION (Mock Login)
+        // ============================================================
+        const USERS = {
+            admin: { password: 'password123', role: 'admin', name: 'Admin' },
+            user: { password: 'pass456', role: 'user', name: 'User' }
+        };
+        let currentUser = null;
+
+        function getRegisteredUsers() {
+            try {
+                return JSON.parse(localStorage.getItem('sfy_registered_users')) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function tryLogin() {
+            const u = document.getElementById('loginUser').value.trim().toLowerCase();
+            const p = document.getElementById('loginPass').value;
+            const err = document.getElementById('loginError');
+            
+            const registeredUsers = getRegisteredUsers();
+            const allUsers = { ...USERS, ...registeredUsers };
+            
+            if (allUsers[u] && allUsers[u].password === p) {
+                currentUser = { username: u, ...allUsers[u] };
+                sessionStorage.setItem('sfyUser', JSON.stringify(currentUser));
+                applyUserSession(currentUser);
+                document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+                err.style.display = 'block';
+                document.getElementById('loginPass').value = '';
+            }
+        }
+
+        function handleSignup() {
+            const u = document.getElementById('signupUser').value.trim().toLowerCase();
+            const name = document.getElementById('signupName').value.trim();
+            const role = document.getElementById('signupRole').value;
+            const p = document.getElementById('signupPass').value;
+            const cp = document.getElementById('signupConfirmPass').value;
+            const err = document.getElementById('signupError');
+            
+            err.style.display = 'none';
+            err.textContent = '';
+
+            if (!u || !name || !p || !cp) {
+                err.textContent = 'All fields are required.';
+                err.style.display = 'block';
+                return;
+            }
+
+            if (u.length < 3) {
+                err.textContent = 'Username must be at least 3 characters.';
+                err.style.display = 'block';
+                return;
+            }
+
+            const registeredUsers = getRegisteredUsers();
+            if (USERS[u] || registeredUsers[u]) {
+                err.textContent = 'Username is already taken.';
+                err.style.display = 'block';
+                return;
+            }
+
+            if (p.length < 6) {
+                err.textContent = 'Password must be at least 6 characters.';
+                err.style.display = 'block';
+                return;
+            }
+
+            if (p !== cp) {
+                err.textContent = 'Passwords do not match.';
+                err.style.display = 'block';
+                return;
+            }
+
+            // Save new user
+            registeredUsers[u] = { password: p, role: role, name: name };
+            localStorage.setItem('sfy_registered_users', JSON.stringify(registeredUsers));
+
+            // Show success toast and switch back to login
+            showToast('Account registered successfully! Please log in.', 'success');
+
+            // Clear inputs
+            document.getElementById('signupUser').value = '';
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupPass').value = '';
+            document.getElementById('signupConfirmPass').value = '';
+
+            // Switch to Login form and pre-fill username
+            document.getElementById('loginUser').value = u;
+            document.getElementById('loginPass').value = '';
+            toggleLoginSignup('login');
+        }
+
+        function toggleLoginSignup(view) {
+            const loginForm = document.getElementById('loginFormSection');
+            const signupForm = document.getElementById('signupFormSection');
+            const loginErr = document.getElementById('loginError');
+            const signupErr = document.getElementById('signupError');
+            
+            loginErr.style.display = 'none';
+            signupErr.style.display = 'none';
+
+            if (view === 'signup') {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+            } else {
+                signupForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            }
+        }
+
+        function applyUserSession(u) {
+            document.getElementById('userAvatar').textContent = u.name[0].toUpperCase();
+            document.getElementById('userNameLabel').textContent = u.name;
+            document.getElementById('userRoleBadge').textContent = u.role.charAt(0).toUpperCase() + u.role.slice(1);
+            if (u.role === 'admin') document.body.classList.add('role-admin');
+            else document.body.classList.remove('role-admin');
+        }
+
+        function logout() {
+            sessionStorage.removeItem('sfyUser');
+            currentUser = null;
+            document.body.classList.remove('role-admin');
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // Check existing session
+        (function () {
+            const saved = sessionStorage.getItem('sfyUser');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                applyUserSession(currentUser);
+                document.getElementById('loginOverlay').style.display = 'none';
+            }
+        })();
+
+        document.getElementById('loginBtn').addEventListener('click', tryLogin);
+        document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('userPill').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') logout(); });
+
+        document.getElementById('showSignupLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleLoginSignup('signup');
+        });
+        document.getElementById('showLoginLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleLoginSignup('login');
+        });
+        document.getElementById('signupBtn').addEventListener('click', handleSignup);
+        document.getElementById('signupConfirmPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignup(); });
+
+
+        // ============================================================
+        // 2. DARK / LIGHT MODE TOGGLE
+        // ============================================================
+        const htmlEl = document.documentElement;
+        const themeBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+
+        function setTheme(t) {
+            htmlEl.setAttribute('data-theme', t);
+            localStorage.setItem('sfyTheme', t);
+            themeIcon.className = t === 'dark' ? 'ph ph-moon' : 'ph ph-sun';
+        }
+
+        (function () {
+            const saved = localStorage.getItem('sfyTheme') || 'dark';
+            setTheme(saved);
+        })();
+
+        themeBtn.addEventListener('click', () => {
+            setTheme(htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+
+        // ============================================================
+        // 3. ACCENT COLOR PICKER
+        // ============================================================
+        const colorPicker = document.getElementById('primaryColorPicker');
+
+        function applyAccentColor(hex) {
+            htmlEl.style.setProperty('--clr-primary', hex);
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            htmlEl.style.setProperty('--clr-primary-glow', `rgba(${r},${g},${b},0.15)`);
+            localStorage.setItem('sfyAccent', hex);
+        }
+
+        (function () {
+            const saved = localStorage.getItem('sfyAccent');
+            if (saved) { colorPicker.value = saved; applyAccentColor(saved); }
+        })();
+
+        colorPicker.addEventListener('input', e => applyAccentColor(e.target.value));
+
+        // ============================================================
+        // 4. EXPORT: CSV / JSON / PDF
+        // ============================================================
+        function downloadBlob(content, filename, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
+        }
+
+        function parseCsv(text) {
+            const rows = [];
+            let row = [], cell = '', inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const next = text[i + 1];
+                if (char === '"' && inQuotes && next === '"') {
+                    cell += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    row.push(cell);
+                    cell = '';
+                } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                    if (char === '\r' && next === '\n') i++;
+                    row.push(cell);
+                    if (row.some(v => v.trim() !== '')) rows.push(row);
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += char;
+                }
+            }
+            row.push(cell);
+            if (row.some(v => v.trim() !== '')) rows.push(row);
+            return rows;
+        }
+
+        function csvRowsToLetters(text) {
+            const rows = parseCsv(text);
+            if (rows.length < 2) return [];
+            const headers = rows[0].map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+            return rows.slice(1).map(values => {
+                const record = {};
+                headers.forEach((header, index) => {
+                    record[header] = values[index] || '';
+                });
+                return normalizeLetter({
+                    id: record.id || record.letterid,
+                    sender: record.sender || record.senderbranch,
+                    receiver: record.receiver || record.receiverbranch,
+                    status: record.status,
+                    priority: record.priority,
+                    weight: record.weight,
+                    dimensions: record.dimensions,
+                    carrier: record.carrier,
+                    trackingNumber: record.trackingnumber || record.tracking_number || record.tracking,
+                    receiverContact: record.receivercontact || record.receiver_contact,
+                    notes: record.notes,
+                    updatedAt: record.lastupdated || record.updatedat,
+                    createdAt: record.createdat,
+                    dueDate: record.duedate
+                });
+            }).filter(l => l.id && l.sender && l.receiver);
+        }
+
+        async function importLetters(letters) {
+            if (!letters.length) {
+                showToast('No valid shipments found in the import file.', 'warn');
+                return;
+            }
+            const existingIds = new Set(allLetters.map(l => l.id));
+            const conflicts = letters.filter(l => existingIds.has(l.id)).length;
+            if (conflicts && !confirm(`${conflicts} existing shipment(s) will be updated. Continue?`)) return;
+
+            let saved = 0;
+            for (const letter of letters) {
+                await db.saveLetter(normalizeLetter(letter));
+                saved++;
+            }
+            await appendConsoleLog(`Imported ${saved} shipment(s) from file${conflicts ? `, ${conflicts} updated` : ''}.`, 'success');
+            showToast(`Imported ${saved} shipment${saved === 1 ? '' : 's'}.`, 'success');
+            await refreshData();
+        }
+
+        async function handleImportFile(event) {
+            const file = event.target.files && event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const isJson = file.name.toLowerCase().endsWith('.json') || file.type.includes('json');
+                const parsed = isJson ? JSON.parse(text) : null;
+                const jsonRows = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.letters) ? parsed.letters : [];
+                const letters = isJson
+                    ? jsonRows.map(normalizeLetter).filter(l => l.id && l.sender && l.receiver)
+                    : csvRowsToLetters(text);
+                await importLetters(letters);
+            } catch (err) {
+                showToast('Import failed. Check the file format.', 'error');
+                await appendConsoleLog(`IMPORT ERROR: ${err.message}`, 'danger');
+            }
+        }
+
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            if (!allLetters || !allLetters.length) { showToast('No data to export.', 'warn'); return; }
+            const header = 'ID,Sender,Receiver,Status,Priority,Weight,Dimensions,Carrier,TrackingNumber,ReceiverContact,Notes,DueDate,CreatedAt,LastUpdated';
+            const rows = allLetters.map(l =>
+                [l.id, l.sender, l.receiver, l.status, l.priority, l.weight, l.dimensions, l.carrier, l.trackingNumber, l.receiverContact, l.notes, l.dueDate, l.createdAt, l.updatedAt].map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')
+            );
+            downloadBlob([header, ...rows].join('\n'), 'letter_branch_shipments.csv', 'text/csv');
+            showToast('CSV exported successfully!', 'success');
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            if (!allLetters || !allLetters.length) { showToast('No data to export.', 'warn'); return; }
+            downloadBlob(JSON.stringify(allLetters, null, 2), 'letter_branch_shipments.json', 'application/json');
+            showToast('JSON exported successfully!', 'success');
+        });
+
+        document.getElementById('exportPdfBtn').addEventListener('click', () => {
+            if (!allLetters || !allLetters.length) { showToast('No data to export.', 'warn'); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+            doc.setFontSize(16);
+            doc.text('Packet Tracker â€“ Shipment Report', 14, 16);
+            doc.setFontSize(9);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 23);
+            const cols = ['ID', 'Sender', 'Receiver', 'Status', 'Due', 'Last Updated'];
+            const rows = allLetters.map(l => [l.id, l.sender, l.receiver, l.status, l.dueDate || '', new Date(l.updatedAt).toLocaleString()]);
+            let y = 32;
+            doc.setFillColor(50, 50, 80);
+            doc.rect(14, y, 269, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            cols.forEach((c, i) => doc.text(c, 16 + i * 44, y + 6));
+            y += 10;
+            doc.setTextColor(20, 20, 20);
+            rows.forEach((row, ri) => {
+                if (ri % 2 === 0) { doc.setFillColor(245, 245, 250); doc.rect(14, y - 1, 269, 8, 'F'); }
+                row.forEach((cell, ci) => doc.text(String(cell).substring(0, 18), 16 + ci * 44, y + 5));
+                y += 9;
+                if (y > 185) { doc.addPage(); y = 20; }
+            });
+            doc.save('letter_branch_shipments.pdf');
+            showToast('PDF exported successfully!', 'success');
+        });
+
+        // ============================================================
+        // 5. CHART.JS CHARTS
+        // ============================================================
+        let statusPieChart = null, trendsBarChart = null, liveLineChart = null;
+        const liveData = Array(12).fill(0);
+        const liveLabels = Array(12).fill('').map((_, i) => `-${11 - i}s`);
+
+        function buildCharts() {
+            // Pie chart
+            const pieCtx = document.getElementById('statusPieChart');
+            if (pieCtx) {
+                if (statusPieChart) statusPieChart.destroy();
+                const pending = (allLetters || []).filter(l => l.status === 'Pending').length;
+                const transit = (allLetters || []).filter(l => l.status === 'In Transit').length;
+                const delivered = (allLetters || []).filter(l => l.status === 'Delivered').length;
+                statusPieChart = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [statusLabel('Pending'), statusLabel('In Transit'), statusLabel('Delivered')],
+                        datasets: [{
+                            data: [pending, transit, delivered],
+                            backgroundColor: ['rgba(245,158,11,0.7)', 'rgba(6,182,212,0.7)', 'rgba(16,185,129,0.7)'],
+                            borderColor: ['#f59e0b', '#06b6d4', '#10b981'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        plugins: { legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#9ca3af', font: { family: 'Outfit' } } } }
+                    }
+                });
+            }
+
+            // Bar chart (last 7 days)
+            const barCtx = document.getElementById('trendsBarChart');
+            if (barCtx) {
+                if (trendsBarChart) trendsBarChart.destroy();
+                const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return d.toISOString().slice(0, 10); });
+                const counts = days.map(d => (allLetters || []).filter(l => l.updatedAt && l.updatedAt.startsWith(d)).length);
+                trendsBarChart = new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: days.map(d => d.slice(5)), datasets: [{
+                            label: tr('total_letters'), data: counts,
+                            backgroundColor: 'rgba(99,102,241,0.5)', borderColor: '#6366f1', borderWidth: 2, borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        plugins: { legend: { labels: { color: '#9ca3af', font: { family: 'Outfit' } } } },
+                        scales: {
+                            x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Live line chart
+            const lineCtx = document.getElementById('liveLineChart');
+            if (lineCtx && !liveLineChart) {
+                liveLineChart = new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: liveLabels, datasets: [{
+                            label: 'Events/sec', data: liveData,
+                            borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.08)',
+                            fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#06b6d4'
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true, animation: false,
+                        plugins: { legend: { labels: { color: '#9ca3af', font: { family: 'Outfit' } } } },
+                        scales: {
+                            x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ============================================================
+        // 7. LIVE REAL-ENTRY SIMULATOR
+        //    Every 8 s one of three events fires and actually writes
+        //    to / updates IndexedDB, then refreshes the whole UI.
+        // ============================================================
+        const SENDER_BRANCHES = ['Berlin Hub', 'Paris Central', 'Rome Depot', 'Madrid Gateway', 'Vienna Post',
+            'Amsterdam Hub', 'Warsaw Center', 'Prague Station', 'Athens Courier', 'Lisbon Hub'];
+        const RECEIVER_BRANCHES = ['Munich Distribution', 'Lyon Sorting', 'Naples Office', 'Barcelona Dispatch',
+            'Zurich HQ', 'Brussels Relay', 'Krakow Terminal', 'Bratislava Post',
+            'Thessaloniki Depot', 'Porto Distribution'];
+        const LIVE_EVENTS = ['new_shipment', 'status_update', 'reminder_sent', 'system_check'];
+
+        async function simulateLiveEvent() {
+            const type = LIVE_EVENTS[Math.floor(Math.random() * LIVE_EVENTS.length)];
+
+            // tick live chart
+            liveData.shift();
+            liveData.push(type === 'system_check' ? 0 : Math.floor(Math.random() * 4) + 1);
+            if (liveLineChart) { liveLineChart.data.datasets[0].data = [...liveData]; liveLineChart.update('none'); }
+
+            if (type === 'system_check') return;
+
+            if (type === 'new_shipment') {
+                // Generate a unique ID (retry if collision)
+                let id, attempts = 0;
+                do {
+                    id = `LT-${Math.floor(1000 + Math.random() * 9000)}`;
+                    attempts++;
+                } while (allLetters.some(l => l.id === id) && attempts < 20);
+
+                const sender = SENDER_BRANCHES[Math.floor(Math.random() * SENDER_BRANCHES.length)];
+                const receiver = RECEIVER_BRANCHES[Math.floor(Math.random() * RECEIVER_BRANCHES.length)];
+                const letter = normalizeLetter({ id, sender, receiver, status: 'Pending', updatedAt: new Date().toISOString() });
+
+                try {
+                    await db.saveLetter(letter);
+                    await appendConsoleLog(`AUTO-INSERT: New shipment ${id} [${sender} â†’ ${receiver}] added via live feed.`, 'success');
+                    showToast(`ðŸ“¦ New shipment ${id} arriving from ${sender}!`, 'success');
+                    await refreshData();
+                } catch (err) {
+                    appendConsoleLog(`AUTO-INSERT ERROR: ${err.message}`, 'danger');
+                }
+
+            } else if (type === 'status_update') {
+                // Advance the status of a random non-delivered shipment
+                const eligible = allLetters.filter(l => l.status !== 'Delivered');
+                if (!eligible.length) return;
+                const letter = eligible[Math.floor(Math.random() * eligible.length)];
+                const oldStatus = letter.status;
+                const newStatus = oldStatus === 'Pending' ? 'In Transit' : 'Delivered';
+                appendStatusHistory(letter, newStatus, oldStatus, 'Live feed update');
+                letter.status = newStatus;
+                letter.updatedAt = new Date().toISOString();
+
+                try {
+                    await db.saveLetter(letter);
+                    await appendConsoleLog(`AUTO-UPDATE: ${letter.id} status changed ${oldStatus} âžœ ${letter.status}`, 'warn');
+                    showToast(`ðŸ”„ ${letter.id} is now ${letter.status}.`, 'warn');
+                    await refreshData();
+                } catch (err) {
+                    appendConsoleLog(`AUTO-UPDATE ERROR: ${err.message}`, 'danger');
+                }
+
+            } else if (type === 'reminder_sent') {
+                // Pick a random pending/in-transit and log an automated reminder (no DB write needed)
+                const eligible = allLetters.filter(l => l.status !== 'Delivered');
+                if (!eligible.length) return;
+                const letter = eligible[Math.floor(Math.random() * eligible.length)];
+                await appendConsoleLog(`AUTO-REMINDER: Scheduled reminder dispatched for ${letter.id} â†’ ${letter.receiver}.`, 'warn');
+                showToast(`ðŸ”” Auto-reminder sent for ${letter.id}.`, 'warn');
+            }
+        }
+
+        setInterval(simulateLiveEvent, 8000);
+
+        // ============================================================
+        // 8. i18n
+        // ============================================================
+        const i18n = {
+            en: {
+                add_letter: 'Add New Letter', bulk_delete: 'Bulk Delete', clear: 'Clear', save: 'Save Shipment', cancel: 'Cancel',
+                search_placeholder: 'Search by ID, sender, receiver...', all_statuses: 'All Statuses', undelivered: 'Not Delivered',
+                pending: 'Pending', in_transit: 'In Transit', delivered: 'Delivered', all_senders: 'All Senders', all_receivers: 'All Receivers',
+                all_sla: 'All SLA', overdue: 'Overdue', due_today: 'Due Today', on_track: 'On Track',
+                latest_updated: 'Latest Updated', oldest_updated: 'Oldest Updated', due_soon: 'Due Soon', due_latest: 'Due Latest',
+                id_az: 'Letter ID (A-Z)', id_za: 'Letter ID (Z-A)', notifications: 'Notifications', all_clear: 'All clear',
+                total_letters: 'Total Letters', not_delivered: 'Not Delivered', current_status: 'Current Status', due_date: 'Expected Delivery Date',
+                sender_branch: 'Sender Branch', receiver_branch: 'Receiver Branch', letter_id: 'Letter ID', from: 'From', to: 'To'
+            },
+            hi: {
+                add_letter: 'नया पत्र जोड़ें', bulk_delete: 'बल्क डिलीट', clear: 'साफ करें', save: 'शिपमेंट सेव करें', cancel: 'रद्द करें',
+                search_placeholder: 'ID, भेजने वाले, पाने वाले से खोजें...', all_statuses: 'सभी स्थिति', undelivered: 'डिलीवर नहीं',
+                pending: 'लंबित', in_transit: 'रास्ते में', delivered: 'डिलीवर', all_senders: 'सभी भेजने वाले', all_receivers: 'सभी पाने वाले',
+                all_sla: 'सभी SLA', overdue: 'देरी हो गई', due_today: 'आज देय', on_track: 'समय पर',
+                latest_updated: 'नवीनतम अपडेट', oldest_updated: 'पुराना अपडेट', due_soon: 'जल्द देय', due_latest: 'सबसे बाद देय',
+                id_az: 'पत्र ID (A-Z)', id_za: 'पत्र ID (Z-A)', notifications: 'सूचनाएं', all_clear: 'सब ठीक',
+                total_letters: 'कुल पत्र', not_delivered: 'डिलीवर नहीं', current_status: 'मौजूदा स्थिति', due_date: 'अपेक्षित डिलीवरी तारीख',
+                sender_branch: 'भेजने वाली शाखा', receiver_branch: 'पाने वाली शाखा', letter_id: 'पत्र ID', from: 'से', to: 'तक'
+            },
+            es: {
+                add_letter: 'Agregar carta', bulk_delete: 'Eliminar en lote', clear: 'Limpiar', save: 'Guardar envío', cancel: 'Cancelar',
+                search_placeholder: 'Buscar por ID, remitente, receptor...', all_statuses: 'Todos los estados', undelivered: 'No entregado',
+                pending: 'Pendiente', in_transit: 'En tránsito', delivered: 'Entregado', all_senders: 'Todos los remitentes', all_receivers: 'Todos los receptores',
+                all_sla: 'Todo SLA', overdue: 'Vencido', due_today: 'Vence hoy', on_track: 'A tiempo',
+                latest_updated: 'Última actualización', oldest_updated: 'Más antiguo', due_soon: 'Vence pronto', due_latest: 'Vence más tarde',
+                id_az: 'ID carta (A-Z)', id_za: 'ID carta (Z-A)', notifications: 'Notificaciones', all_clear: 'Todo bien',
+                total_letters: 'Total de cartas', not_delivered: 'No entregado', current_status: 'Estado actual', due_date: 'Fecha esperada de entrega',
+                sender_branch: 'Sucursal remitente', receiver_branch: 'Sucursal receptora', letter_id: 'ID de carta', from: 'Desde', to: 'Hasta'
+            },
+            fr: {
+                add_letter: 'Ajouter une lettre', bulk_delete: 'Supprimer en lot', clear: 'Effacer', save: 'Enregistrer', cancel: 'Annuler',
+                search_placeholder: 'Rechercher par ID, expéditeur, destinataire...', all_statuses: 'Tous les statuts', undelivered: 'Non livré',
+                pending: 'En attente', in_transit: 'En transit', delivered: 'Livré', all_senders: 'Tous les expéditeurs', all_receivers: 'Tous les destinataires',
+                all_sla: 'Tous les SLA', overdue: 'En retard', due_today: "Prévu aujourd'hui", on_track: 'Dans les temps',
+                latest_updated: 'Dernière mise à jour', oldest_updated: 'Plus ancien', due_soon: 'Bientôt dû', due_latest: 'Dû plus tard',
+                id_az: 'ID lettre (A-Z)', id_za: 'ID lettre (Z-A)', notifications: 'Notifications', all_clear: 'Tout est clair',
+                total_letters: 'Total lettres', not_delivered: 'Non livré', current_status: 'Statut actuel', due_date: 'Date de livraison prévue',
+                sender_branch: 'Agence expéditrice', receiver_branch: 'Agence destinataire', letter_id: 'ID lettre', from: 'De', to: 'À'
+            },
+            de: {
+                add_letter: 'Brief hinzufügen', bulk_delete: 'Massenlöschen', clear: 'Zurücksetzen', save: 'Sendung speichern', cancel: 'Abbrechen',
+                search_placeholder: 'Nach ID, Absender, Empfänger suchen...', all_statuses: 'Alle Status', undelivered: 'Nicht zugestellt',
+                pending: 'Ausstehend', in_transit: 'Unterwegs', delivered: 'Zugestellt', all_senders: 'Alle Absender', all_receivers: 'Alle Empfänger',
+                all_sla: 'Alle SLA', overdue: 'Überfällig', due_today: 'Heute fällig', on_track: 'Im Zeitplan',
+                latest_updated: 'Zuletzt aktualisiert', oldest_updated: 'Älteste zuerst', due_soon: 'Bald fällig', due_latest: 'Später fällig',
+                id_az: 'Brief-ID (A-Z)', id_za: 'Brief-ID (Z-A)', notifications: 'Benachrichtigungen', all_clear: 'Alles klar',
+                total_letters: 'Briefe gesamt', not_delivered: 'Nicht zugestellt', current_status: 'Aktueller Status', due_date: 'Erwartetes Lieferdatum',
+                sender_branch: 'Absenderfiliale', receiver_branch: 'Empfängerfiliale', letter_id: 'Brief-ID', from: 'Von', to: 'Bis'
+            },
+            ar: {
+                add_letter: 'إضافة خطاب', bulk_delete: 'حذف جماعي', clear: 'مسح', save: 'حفظ الشحنة', cancel: 'إلغاء',
+                search_placeholder: 'ابحث بالرقم أو المرسل أو المستلم...', all_statuses: 'كل الحالات', undelivered: 'غير مسلم',
+                pending: 'قيد الانتظار', in_transit: 'قيد النقل', delivered: 'تم التسليم', all_senders: 'كل المرسلين', all_receivers: 'كل المستلمين',
+                all_sla: 'كل SLA', overdue: 'متأخر', due_today: 'مستحق اليوم', on_track: 'على المسار',
+                latest_updated: 'آخر تحديث', oldest_updated: 'الأقدم', due_soon: 'مستحق قريبا', due_latest: 'الأبعد استحقاقا',
+                id_az: 'رقم الخطاب (A-Z)', id_za: 'رقم الخطاب (Z-A)', notifications: 'الإشعارات', all_clear: 'لا توجد تنبيهات',
+                total_letters: 'إجمالي الخطابات', not_delivered: 'غير مسلم', current_status: 'الحالة الحالية', due_date: 'تاريخ التسليم المتوقع',
+                sender_branch: 'فرع المرسل', receiver_branch: 'فرع المستلم', letter_id: 'رقم الخطاب', from: 'من', to: 'إلى'
+            }
+        };
+        let currentLang = localStorage.getItem('sfyLang') || 'en';
+
+        function tr(key) {
+            return (i18n[currentLang] && i18n[currentLang][key]) || i18n.en[key] || key;
+        }
+
+        function statusLabel(status) {
+            if (status === 'Pending') return tr('pending');
+            if (status === 'In Transit') return tr('in_transit');
+            if (status === 'Delivered') return tr('delivered');
+            return status;
+        }
+
+        function setSelectLabels(select, labels) {
+            if (!select) return;
+            labels.forEach(([value, key]) => {
+                const option = Array.from(select.options).find(o => o.value === value);
+                if (option) option.textContent = tr(key);
+            });
+        }
+
+        function applyI18n(lang) {
+            currentLang = i18n[lang] ? lang : 'en';
+            localStorage.setItem('sfyLang', currentLang);
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            const langSelect = document.getElementById('langSelect');
+            if (langSelect) langSelect.value = currentLang;
+
+            searchInput.placeholder = tr('search_placeholder');
+            openAddModalBtn.innerHTML = `<i class="ph-bold ph-plus" aria-hidden="true"></i> ${tr('add_letter')}`;
+            updateBulkDeleteButtonState();
+            clearFiltersBtn.innerHTML = `<i class="ph ph-funnel-x" aria-hidden="true"></i> ${tr('clear')}`;
+            document.getElementById('saveBtn').textContent = tr('save');
+            cancelBtn.textContent = tr('cancel');
+            document.querySelector('label[for="letterId"]').textContent = tr('letter_id');
+            document.querySelector('label[for="sender"]').textContent = tr('sender_branch');
+            document.querySelector('label[for="receiver"]').textContent = tr('receiver_branch');
+            document.querySelector('label[for="status"]').textContent = tr('current_status');
+            document.querySelector('label[for="dueDate"]').textContent = tr('due_date');
+            document.querySelector('#notificationPanel .notification-head strong').textContent = tr('notifications');
+            document.getElementById('dateFromLabel').textContent = tr('from');
+            document.getElementById('dateToLabel').textContent = tr('to');
+
+            const statLabels = document.querySelectorAll('.stat-info h3');
+            if (statLabels.length >= 5) {
+                statLabels[0].textContent = tr('total_letters');
+                statLabels[1].textContent = tr('pending');
+                statLabels[2].textContent = tr('in_transit');
+                statLabels[3].textContent = tr('delivered');
+                statLabels[4].textContent = tr('not_delivered');
+            }
+
+            setSelectLabels(statusFilter, [['All', 'all_statuses'], ['Pending', 'pending'], ['In Transit', 'in_transit'], ['Delivered', 'delivered'], ['Undelivered', 'undelivered']]);
+            setSelectLabels(statusInput, [['Pending', 'pending'], ['In Transit', 'in_transit'], ['Delivered', 'delivered']]);
+            setSelectLabels(slaFilter, [['All', 'all_sla'], ['Overdue', 'overdue'], ['Due Today', 'due_today'], ['On Track', 'on_track']]);
+            setSelectLabels(sortBy, [['updatedAt-desc', 'latest_updated'], ['updatedAt-asc', 'oldest_updated'], ['dueDate-asc', 'due_soon'], ['dueDate-desc', 'due_latest'], ['id-asc', 'id_az'], ['id-desc', 'id_za']]);
+            if (senderFilter.options[0]) senderFilter.options[0].textContent = tr('all_senders');
+            if (receiverFilter.options[0]) receiverFilter.options[0].textContent = tr('all_receivers');
+
+            renderUI();
+            buildCharts();
+        }
+
+        document.getElementById('langSelect').addEventListener('change', e => applyI18n(e.target.value));
+        applyI18n(currentLang);
+
+        // Patch: hook into the tracker's refreshData to rebuild charts after data loads
+        // We use a MutationObserver on the table body to detect renders
+        const tableBodyObserver = new MutationObserver(() => {
+            buildCharts();
+        });
+        const tbody = document.getElementById('letterTableBody');
+        if (tbody) tableBodyObserver.observe(tbody, { childList: true });
+
+        // Initial chart build (data may already be loaded)
+        setTimeout(buildCharts, 800);
+    </script>
+</body>
+
+</html>
