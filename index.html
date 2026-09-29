@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 
 <head>
@@ -1965,6 +1965,304 @@
         .hidden {
             display: none !important;
         }
+
+        /* ===== STATE MANAGEMENT & STORAGE INSPECTOR STYLES ===== */
+        .state-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--text-primary);
+            font-weight: 500;
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .state-btn:hover {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: var(--clr-primary);
+            transform: translateY(-1px);
+        }
+
+        .state-btn i {
+            color: var(--clr-primary);
+            font-size: 1.05rem;
+        }
+
+        .state-btn strong {
+            color: var(--clr-primary);
+            font-weight: 700;
+        }
+
+        .state-modal {
+            max-width: 800px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.75rem;
+            box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .state-flow-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        .flow-step.active {
+            border-color: var(--clr-primary);
+            color: var(--clr-primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .state-modal-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .state-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .state-tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .state-tab-btn.active {
+            color: var(--clr-primary);
+            background: rgba(99, 102, 241, 0.12);
+            border-bottom: 2px solid var(--clr-primary);
+        }
+
+        .state-tab-pane {
+            display: none;
+        }
+
+        .state-tab-pane.active {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Storage Cards */
+        .storage-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .storage-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .storage-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: var(--bg-card-hover);
+        }
+
+        .storage-card.active {
+            border-color: var(--clr-primary);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+
+        .storage-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .storage-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .storage-tag-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .storage-tag-badge.active-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--clr-success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .storage-tag-badge.standby-badge {
+            background: rgba(156, 163, 175, 0.15);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .storage-card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            margin-bottom: 0.85rem;
+        }
+
+        .storage-card-meta {
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--clr-info);
+            background: rgba(6, 182, 212, 0.08);
+            padding: 0.35rem 0.55rem;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* State KPI Cards */
+        .state-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .state-kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            text-align: center;
+        }
+
+        .state-kpi-card h4 {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .state-kpi-card .kpi-val {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--clr-primary);
+        }
+
+        /* Mutation Timeline */
+        .mutation-timeline {
+            max-height: 230px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--terminal-bg);
+            padding: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+
+        .mutation-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 0.5rem;
+        }
+
+        .mutation-item:last-child {
+            border-bottom: none;
+        }
+
+        .mutation-badge {
+            font-weight: 700;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .mutation-badge.add { background: rgba(16, 185, 129, 0.2); color: var(--clr-success); }
+        .mutation-badge.update { background: rgba(6, 182, 212, 0.2); color: var(--clr-info); }
+        .mutation-badge.delete { background: rgba(239, 68, 68, 0.2); color: var(--clr-danger); }
+        .mutation-badge.sync { background: rgba(245, 158, 11, 0.2); color: var(--clr-warning); }
+
+        .state-json-box {
+            background: var(--terminal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 280px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #38bdf8;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .storage-config-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 
@@ -2060,6 +2358,10 @@
                     <span class="pulse-dot"></span>
                     <span id="dbStatusText">Initializing...</span>
                 </div>
+                <button class="state-btn" id="openStateInspectorBtn" title="State Management & Storage Inspector" aria-label="Open State Manager">
+                    <i class="ph-bold ph-database"></i>
+                    <span>Storage: <strong id="headerStorageBadge">LocalStorage</strong></span>
+                </button>
                 <div class="export-toolbar">
                     <button class="btn btn-outline btn-sm" id="exportCsvBtn" title="Export as CSV"
                         aria-label="Export CSV">
@@ -2310,6 +2612,10 @@
                     <span>DATABASE_LOG_CONSOLE</span>
                 </div>
                 <div class="terminal-actions">
+                    <button class="terminal-action-btn" id="openStateInspectorBtnTerminal" title="Inspect State Management & Storage"
+                        aria-label="Inspect State & Storage">
+                        <i class="ph ph-sliders"></i>
+                    </button>
                     <button class="terminal-action-btn" id="clearTerminalBtn" title="Clear Logs"
                         aria-label="Clear logs">
                         <i class="ph ph-trash" aria-hidden="true"></i>
@@ -2440,14 +2746,306 @@
         </div>
     </div>
 
+    <!-- State Management & Storage Inspector Modal -->
+    <div class="modal-overlay" id="stateInspectorModalOverlay" role="dialog" aria-modal="true" aria-label="State Management and Storage Inspector">
+        <div class="state-modal">
+            <div class="modal-header">
+                <h2><i class="ph-bold ph-database" style="color:var(--clr-primary);margin-right:0.4rem;"></i> State Management & Storage Inspector</h2>
+                <button class="close-modal" id="closeStateInspectorModalBtn" aria-label="Close state inspector">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Unidirectional State Flow Diagram -->
+            <div class="state-flow-banner">
+                <div>
+                    <strong style="color:var(--text-primary);display:block;font-size:0.85rem;margin-bottom:0.2rem;">Reactive Unidirectional Data Flow</strong>
+                    <span style="font-size:0.75rem;color:var(--text-secondary);">Mutations dispatch through StateManager to persist and update reactive UI subscribers</span>
+                </div>
+                <div class="flow-diagram">
+                    <span class="flow-step">UI Action</span>
+                    <span>&rarr;</span>
+                    <span class="flow-step active">StateManager</span>
+                    <span>&rarr;</span>
+                    <span class="flow-step" id="flowStorageStep">LocalStorage</span>
+                    <span>&rarr;</span>
+                    <span class="flow-step">Subscribers</span>
+                </div>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="state-modal-tabs" role="tablist">
+                <button class="state-tab-btn active" data-tab="tab-storage" role="tab" aria-selected="true">
+                    <i class="ph-bold ph-hard-drives"></i> Storage Adapters
+                </button>
+                <button class="state-tab-btn" data-tab="tab-state" role="tab" aria-selected="false">
+                    <i class="ph-bold ph-tree-structure"></i> State & Mutations
+                </button>
+                <button class="state-tab-btn" data-tab="tab-json" role="tab" aria-selected="false">
+                    <i class="ph-bold ph-code"></i> Raw State JSON
+                </button>
+            </div>
+
+            <!-- Tab 1: Storage Adapters -->
+            <div class="state-tab-pane active" id="tab-storage" role="tabpanel">
+                <div class="storage-cards-grid">
+                    <!-- LocalStorage (Simple Web Storage) -->
+                    <div class="storage-card active" id="cardLocalStorage" role="button" tabindex="0">
+                        <div class="storage-card-header">
+                            <span class="storage-card-title">
+                                <i class="ph-bold ph-floppy-disk" style="color:var(--clr-primary);"></i> LocalStorage
+                            </span>
+                            <span class="storage-tag-badge active-badge" id="badgeLocalStorage">Active</span>
+                        </div>
+                        <p class="storage-card-desc">
+                            Simple key-value browser storage. Serializes shipments & logs directly into JSON in <code>localStorage</code>. Lightweight, persistent, zero server setup needed.
+                        </p>
+                        <div class="storage-card-meta">
+                            <span>Key: <code>sfy_letters_data</code></span>
+                            <span id="localStorageSizeLabel">0 KB</span>
+                        </div>
+                    </div>
+
+                    <!-- Firebase Realtime Cloud DB -->
+                    <div class="storage-card" id="cardFirebase" role="button" tabindex="0">
+                        <div class="storage-card-header">
+                            <span class="storage-card-title">
+                                <i class="ph-bold ph-fire" style="color:#f59e0b;"></i> Firebase Realtime
+                            </span>
+                            <span class="storage-tag-badge standby-badge" id="badgeFirebase">Standby</span>
+                        </div>
+                        <p class="storage-card-desc">
+                            Cloud database synchronization. Synchronizes state via Firebase REST API with cloud simulation mode for multi-tab/device live syncing.
+                        </p>
+                        <div class="storage-card-meta">
+                            <span>REST / Cloud Sync</span>
+                            <span id="firebaseStatusLabel">Ready</span>
+                        </div>
+                    </div>
+
+                    <!-- IndexedDB (Browser NoSQL) -->
+                    <div class="storage-card" id="cardIndexedDB" role="button" tabindex="0">
+                        <div class="storage-card-header">
+                            <span class="storage-card-title">
+                                <i class="ph-bold ph-database" style="color:var(--clr-info);"></i> IndexedDB
+                            </span>
+                            <span class="storage-tag-badge standby-badge" id="badgeIndexedDB">Standby</span>
+                        </div>
+                        <p class="storage-card-desc">
+                            Client-side transactional object store with indexes for high volume structured client records and query cursors.
+                        </p>
+                        <div class="storage-card-meta">
+                            <span>Store: <code>LetterTrackerDB</code></span>
+                            <span id="indexedDBSizeLabel">Available</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Firebase Configuration Drawer -->
+                <div class="storage-config-box" id="firebaseConfigBox">
+                    <h4 style="font-size:0.85rem;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+                        <i class="ph-bold ph-gear"></i> Firebase Realtime Database Configuration (Optional Custom Endpoint)
+                    </h4>
+                    <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:center;">
+                        <input type="text" id="firebaseDbUrlInput" class="form-control" placeholder="https://<YOUR-PROJECT>-default-rtdb.firebaseio.com" style="font-size:0.8rem;padding:0.4rem 0.75rem;">
+                        <button class="btn btn-sm btn-outline" id="saveFirebaseConfigBtn" style="white-space:nowrap;">
+                            <i class="ph ph-check"></i> Save & Connect
+                        </button>
+                    </div>
+                    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;font-size:0.75rem;color:var(--text-secondary);">
+                        <span>Status: <strong id="firebaseConnectionStatus" style="color:var(--clr-success);">Demo Cloud Sync Mode (Active)</strong></span>
+                        <button class="btn btn-sm btn-secondary" id="testFirebaseSyncBtn" style="padding:0.2rem 0.5rem;font-size:0.7rem;margin-left:auto;">
+                            <i class="ph ph-cloud-arrow-up"></i> Test Cloud Sync
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Storage Migration & Tools -->
+                <div style="margin-top:1.25rem;display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;border-top:1px solid var(--border-color);padding-top:1rem;">
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <button class="btn btn-sm btn-outline" id="migrateStateBtn" title="Sync current state to active storage engine">
+                            <i class="ph ph-arrows-clockwise"></i> Sync Current State to Active Storage
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="seedDefaultStateBtn" title="Populate with sample letters">
+                            <i class="ph ph-sparkle"></i> Reset Default Sample Data
+                        </button>
+                    </div>
+                    <button class="btn btn-sm btn-outline" id="clearStorageBtn" style="color:var(--clr-danger);border-color:rgba(239,68,68,0.3);">
+                        <i class="ph ph-trash"></i> Clear Storage Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: State & Mutations -->
+            <div class="state-tab-pane" id="tab-state" role="tabpanel">
+                <div class="state-kpi-grid">
+                    <div class="state-kpi-card">
+                        <h4>Storage Engine</h4>
+                        <div class="kpi-val" id="stateKpiEngine" style="font-size:1rem;color:var(--clr-primary);">LocalStorage</div>
+                    </div>
+                    <div class="state-kpi-card">
+                        <h4>State Letters</h4>
+                        <div class="kpi-val" id="stateKpiLetters">0</div>
+                    </div>
+                    <div class="state-kpi-card">
+                        <h4>Dispatched Actions</h4>
+                        <div class="kpi-val" id="stateKpiMutations">0</div>
+                    </div>
+                    <div class="state-kpi-card">
+                        <h4>Subscribers</h4>
+                        <div class="kpi-val" id="stateKpiSubscribers">3</div>
+                    </div>
+                    <div class="state-kpi-card">
+                        <h4>Storage Footprint</h4>
+                        <div class="kpi-val" id="stateKpiBytes" style="font-size:1rem;">0 KB</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                    <span style="font-size:0.8rem;font-weight:700;text-transform:uppercase;color:var(--text-secondary);letter-spacing:0.5px;">
+                        Live Mutation Stream (Action Dispatch History)
+                    </span>
+                    <button class="btn btn-sm btn-secondary" id="clearMutationStreamBtn" style="padding:0.2rem 0.5rem;font-size:0.7rem;">
+                        Clear History
+                    </button>
+                </div>
+                <div class="mutation-timeline" id="mutationTimeline">
+                    <div class="mutation-item" style="color:var(--text-muted);">
+                        <span>[System Init] StateManager store initialized with LocalStorage.</span>
+                        <span>0.0ms</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Raw State JSON Tree -->
+            <div class="state-tab-pane" id="tab-json" role="tabpanel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+                    <span style="font-size:0.8rem;color:var(--text-secondary);">
+                        Live reactive snapshot of <code>stateManager.getState()</code>
+                    </span>
+                    <div style="display:flex;gap:0.4rem;">
+                        <button class="btn btn-sm btn-outline" id="copyStateJsonBtn">
+                            <i class="ph ph-copy"></i> Copy JSON
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="exportStateFileBtn">
+                            <i class="ph ph-download-simple"></i> Download State
+                        </button>
+                    </div>
+                </div>
+                <div class="state-json-box" id="rawStateJsonBox">// Loading state...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
     <!-- Scripting for Database & App Flow -->
     <script>
-        // IndexedDB Manager Class
-        class TrackerDB {
+        // ============================================================
+        // 1. STORAGE ADAPTERS (LocalStorage, Firebase, IndexedDB)
+        // ============================================================
+
+        // --- LocalStorage Adapter (Simple Web Data Storage) ---
+        class LocalStorageAdapter {
             constructor() {
+                this.name = 'localstorage';
+                this.label = 'LocalStorage';
+                this.storageKey = 'sfy_letters_data';
+                this.logsKey = 'sfy_activity_logs';
+            }
+
+            async init() {
+                if (!localStorage.getItem(this.storageKey)) {
+                    localStorage.setItem(this.storageKey, JSON.stringify([]));
+                }
+                if (!localStorage.getItem(this.logsKey)) {
+                    localStorage.setItem(this.logsKey, JSON.stringify([]));
+                }
+                return true;
+            }
+
+            async getAllLetters() {
+                try {
+                    const raw = localStorage.getItem(this.storageKey);
+                    return raw ? JSON.parse(raw) : [];
+                } catch (e) {
+                    console.error("LocalStorage read error:", e);
+                    return [];
+                }
+            }
+
+            async getLetter(id) {
+                const list = await this.getAllLetters();
+                return list.find(l => l.id === id) || null;
+            }
+
+            async saveLetter(letter) {
+                const list = await this.getAllLetters();
+                const idx = list.findIndex(l => l.id === letter.id);
+                if (idx >= 0) {
+                    list[idx] = letter;
+                } else {
+                    list.unshift(letter);
+                }
+                localStorage.setItem(this.storageKey, JSON.stringify(list));
+                return letter;
+            }
+
+            async deleteLetter(id) {
+                const list = await this.getAllLetters();
+                const filtered = list.filter(l => l.id !== id);
+                localStorage.setItem(this.storageKey, JSON.stringify(filtered));
+                return true;
+            }
+
+            async addLog(message, type = 'info') {
+                try {
+                    const raw = localStorage.getItem(this.logsKey);
+                    const logs = raw ? JSON.parse(raw) : [];
+                    logs.unshift({
+                        id: Date.now() + Math.random(),
+                        message,
+                        type,
+                        timestamp: new Date().toISOString()
+                    });
+                    if (logs.length > 80) logs.length = 80;
+                    localStorage.setItem(this.logsKey, JSON.stringify(logs));
+                } catch (e) {
+                    console.error("LocalStorage addLog error:", e);
+                }
+            }
+
+            async getLogs(limit = 40) {
+                try {
+                    const raw = localStorage.getItem(this.logsKey);
+                    const logs = raw ? JSON.parse(raw) : [];
+                    return logs.slice(0, limit);
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            async clearLogs() {
+                localStorage.setItem(this.logsKey, JSON.stringify([]));
+            }
+
+            getStats() {
+                const rawLetters = localStorage.getItem(this.storageKey) || '[]';
+                const rawLogs = localStorage.getItem(this.logsKey) || '[]';
+                const bytes = (rawLetters.length + rawLogs.length) * 2;
+                return {
+                    bytes,
+                    formattedSize: `${(bytes / 1024).toFixed(1)} KB`
+                };
+            }
+        }
+
+        // --- IndexedDB Adapter (Client-Side Structured Database) ---
+        class IndexedDBAdapter {
+            constructor() {
+                this.name = 'indexeddb';
+                this.label = 'IndexedDB';
                 this.dbName = 'LetterTrackerDB';
                 this.dbVersion = 1;
                 this.db = null;
@@ -2456,29 +3054,20 @@
             async init() {
                 return new Promise((resolve, reject) => {
                     const request = indexedDB.open(this.dbName, this.dbVersion);
-
-                    request.onerror = (event) => {
-                        reject(new Error(`Failed to open IndexedDB: ${event.target.error}`));
-                    };
-
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
+                    request.onerror = (e) => reject(new Error(`Failed to open IndexedDB: ${e.target.error}`));
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
                         resolve(this.db);
                     };
-
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-
-                        // Object Store for letter shipments
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
                         if (!db.objectStoreNames.contains('letters')) {
-                            const letterStore = db.createObjectStore('letters', { keyPath: 'id' });
-                            letterStore.createIndex('sender', 'sender', { unique: false });
-                            letterStore.createIndex('receiver', 'receiver', { unique: false });
-                            letterStore.createIndex('status', 'status', { unique: false });
-                            letterStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+                            const store = db.createObjectStore('letters', { keyPath: 'id' });
+                            store.createIndex('sender', 'sender', { unique: false });
+                            store.createIndex('receiver', 'receiver', { unique: false });
+                            store.createIndex('status', 'status', { unique: false });
+                            store.createIndex('updatedAt', 'updatedAt', { unique: false });
                         }
-
-                        // Object Store for db activities/history logs
                         if (!db.objectStoreNames.contains('logs')) {
                             db.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
                         }
@@ -2486,28 +3075,20 @@
                 });
             }
 
-            // General promise-based transaction runner
             runTransaction(storeName, mode, callback) {
                 return new Promise((resolve, reject) => {
                     if (!this.db) {
-                        reject(new Error("Database not initialized"));
+                        reject(new Error("IndexedDB not initialized"));
                         return;
                     }
-                    const transaction = this.db.transaction([storeName], mode);
-                    const store = transaction.objectStore(storeName);
-                    const request = callback(store);
-
-                    transaction.oncomplete = () => {
-                        resolve(request.result);
-                    };
-
-                    transaction.onerror = (event) => {
-                        reject(event.target.error);
-                    };
+                    const tx = this.db.transaction([storeName], mode);
+                    const store = tx.objectStore(storeName);
+                    const req = callback(store);
+                    tx.oncomplete = () => resolve(req.result);
+                    tx.onerror = (e) => reject(e.target.error);
                 });
             }
 
-            // --- Letter Store API ---
             async getLetter(id) {
                 return this.runTransaction('letters', 'readonly', (store) => store.get(id));
             }
@@ -2524,29 +3105,20 @@
                 return this.runTransaction('letters', 'readonly', (store) => store.getAll());
             }
 
-            // --- Activity Log API ---
             async addLog(message, type = 'info') {
-                const logEntry = {
-                    message,
-                    type,
-                    timestamp: new Date().toISOString()
-                };
+                const logEntry = { message, type, timestamp: new Date().toISOString() };
                 return this.runTransaction('logs', 'readwrite', (store) => store.add(logEntry));
             }
 
             async getLogs(limit = 40) {
                 return new Promise((resolve, reject) => {
-                    if (!this.db) {
-                        resolve([]);
-                        return;
-                    }
-                    const transaction = this.db.transaction(['logs'], 'readonly');
-                    const store = transaction.objectStore('logs');
-                    const request = store.openCursor(null, 'prev'); // cursor in reverse direction to get latest first
+                    if (!this.db) { resolve([]); return; }
+                    const tx = this.db.transaction(['logs'], 'readonly');
+                    const store = tx.objectStore('logs');
+                    const req = store.openCursor(null, 'prev');
                     const results = [];
-
-                    request.onsuccess = (event) => {
-                        const cursor = event.target.result;
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
                         if (cursor && results.length < limit) {
                             results.push(cursor.value);
                             cursor.continue();
@@ -2554,20 +3126,513 @@
                             resolve(results);
                         }
                     };
-
-                    request.onerror = (event) => {
-                        reject(event.target.error);
-                    };
+                    req.onerror = (e) => reject(e.target.error);
                 });
             }
 
             async clearLogs() {
                 return this.runTransaction('logs', 'readwrite', (store) => store.clear());
             }
+
+            getStats() {
+                return { bytes: 0, formattedSize: 'IndexedDB Store' };
+            }
         }
 
-        // --- Application State ---
-        const db = new TrackerDB();
+        // --- Firebase Realtime Database Adapter (Cloud Storage Sync) ---
+        class FirebaseAdapter {
+            constructor() {
+                this.name = 'firebase';
+                this.label = 'Firebase Realtime';
+                this.dbUrl = localStorage.getItem('sfy_firebase_url') || '';
+                this.fallbackStorage = new LocalStorageAdapter();
+                this.isDemoMode = !this.dbUrl;
+            }
+
+            setDbUrl(url) {
+                this.dbUrl = (url || '').trim().replace(/\/+$/, '');
+                localStorage.setItem('sfy_firebase_url', this.dbUrl);
+                this.isDemoMode = !this.dbUrl;
+            }
+
+            async init() {
+                await this.fallbackStorage.init();
+                return true;
+            }
+
+            async getAllLetters() {
+                if (this.isDemoMode || !this.dbUrl) {
+                    return this.fallbackStorage.getAllLetters();
+                }
+                try {
+                    const res = await fetch(`${this.dbUrl}/letters.json`, { method: 'GET' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    if (!data) return [];
+                    const list = Array.isArray(data) ? data : Object.values(data);
+                    return list.filter(Boolean);
+                } catch (e) {
+                    console.warn("Firebase REST fetch failed, using fallback:", e);
+                    return this.fallbackStorage.getAllLetters();
+                }
+            }
+
+            async getLetter(id) {
+                const list = await this.getAllLetters();
+                return list.find(l => l.id === id) || null;
+            }
+
+            async saveLetter(letter) {
+                await this.fallbackStorage.saveLetter(letter);
+                if (!this.isDemoMode && this.dbUrl) {
+                    try {
+                        await fetch(`${this.dbUrl}/letters/${letter.id}.json`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(letter)
+                        });
+                    } catch (e) {
+                        console.warn("Firebase save error:", e);
+                    }
+                }
+                return letter;
+            }
+
+            async deleteLetter(id) {
+                await this.fallbackStorage.deleteLetter(id);
+                if (!this.isDemoMode && this.dbUrl) {
+                    try {
+                        await fetch(`${this.dbUrl}/letters/${id}.json`, { method: 'DELETE' });
+                    } catch (e) {
+                        console.warn("Firebase delete error:", e);
+                    }
+                }
+                return true;
+            }
+
+            async addLog(message, type = 'info') {
+                await this.fallbackStorage.addLog(message, type);
+            }
+
+            async getLogs(limit = 40) {
+                return this.fallbackStorage.getLogs(limit);
+            }
+
+            async clearLogs() {
+                await this.fallbackStorage.clearLogs();
+            }
+
+            getStats() {
+                return {
+                    bytes: 0,
+                    formattedSize: this.isDemoMode ? 'Cloud Simulator' : 'Remote Firebase'
+                };
+            }
+        }
+
+        // ============================================================
+        // 2. CENTRAL STATE MANAGER (Unidirectional Reactive Store)
+        // ============================================================
+        class LetterStateManager {
+            constructor() {
+                this.adapters = {
+                    localstorage: new LocalStorageAdapter(),
+                    indexeddb: new IndexedDBAdapter(),
+                    firebase: new FirebaseAdapter()
+                };
+
+                // Default active engine is LocalStorage for simple data storage
+                const savedEngine = localStorage.getItem('sfy_active_storage') || 'localstorage';
+                this.activeEngineName = this.adapters[savedEngine] ? savedEngine : 'localstorage';
+                this.activeAdapter = this.adapters[this.activeEngineName];
+
+                // Single source of truth in memory
+                this.state = {
+                    letters: [],
+                    logs: [],
+                    activeEngine: this.activeEngineName,
+                    mutations: [],
+                    lastAction: null,
+                    isReady: false
+                };
+
+                this.subscribers = new Set();
+            }
+
+            getActiveEngineName() {
+                return this.activeAdapter ? this.activeAdapter.label : 'LocalStorage';
+            }
+
+            subscribe(listener) {
+                this.subscribers.add(listener);
+                return () => this.subscribers.delete(listener);
+            }
+
+            notifySubscribers(action, payload) {
+                for (const sub of this.subscribers) {
+                    try {
+                        sub(this.state, action, payload);
+                    } catch (e) {
+                        console.error("Subscriber notification error:", e);
+                    }
+                }
+            }
+
+            getState() {
+                return {
+                    activeStorage: this.activeEngineName,
+                    storageLabel: this.getActiveEngineName(),
+                    lettersCount: this.state.letters.length,
+                    logsCount: this.state.logs.length,
+                    mutationsCount: this.state.mutations.length,
+                    subscribersCount: this.subscribers.size,
+                    lastMutation: this.state.lastAction,
+                    letters: this.state.letters
+                };
+            }
+
+            recordMutation(action, summary, latency) {
+                const entry = {
+                    id: Date.now() + Math.random(),
+                    action,
+                    summary,
+                    latency: `${latency}ms`,
+                    storage: this.getActiveEngineName(),
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                this.state.mutations.unshift(entry);
+                if (this.state.mutations.length > 50) this.state.mutations.length = 50;
+                this.state.lastAction = entry;
+                this.renderMutationToDom(entry);
+            }
+
+            renderMutationToDom(entry) {
+                if (typeof document === 'undefined' || !document.createElement) return;
+                const timeline = document.getElementById('mutationTimeline');
+                if (!timeline || !timeline.insertBefore) return;
+                const div = document.createElement('div');
+                div.className = 'mutation-item';
+                let badgeClass = 'sync';
+                if (entry.action.includes('ADD')) badgeClass = 'add';
+                else if (entry.action.includes('UPDATE')) badgeClass = 'update';
+                else if (entry.action.includes('DELETE')) badgeClass = 'delete';
+
+                div.innerHTML = `
+                    <span>
+                        <span class="mutation-badge ${badgeClass}">${entry.action}</span>
+                        <span>${escapeHTML(entry.summary)}</span>
+                    </span>
+                    <span style="color:var(--text-muted);font-size:0.7rem;">${entry.storage} &bull; ${entry.latency}</span>
+                `;
+                timeline.insertBefore(div, timeline.firstChild);
+            }
+
+            // --- Unidirectional Action Dispatcher ---
+            async dispatch(action, payload) {
+                const startTime = performance.now();
+                let summary = '';
+
+                switch (action) {
+                    case 'INIT_STATE': {
+                        await this.activeAdapter.init();
+                        let raw = await this.activeAdapter.getAllLetters();
+                        this.state.letters = (raw || []).map(normalizeLetter).filter(l => l.id && l.sender && l.receiver);
+                        this.state.logs = await this.activeAdapter.getLogs(50);
+                        this.state.isReady = true;
+                        summary = `Loaded ${this.state.letters.length} shipments from ${this.getActiveEngineName()}`;
+                        break;
+                    }
+
+                    case 'ADD_LETTER': {
+                        const letter = normalizeLetter(payload);
+                        await this.activeAdapter.saveLetter(letter);
+                        const existsIdx = this.state.letters.findIndex(l => l.id === letter.id);
+                        if (existsIdx >= 0) {
+                            this.state.letters[existsIdx] = letter;
+                        } else {
+                            this.state.letters.unshift(letter);
+                        }
+                        summary = `Added ${letter.id} [${letter.sender} &rarr; ${letter.receiver}]`;
+                        break;
+                    }
+
+                    case 'UPDATE_LETTER': {
+                        const letter = normalizeLetter(payload);
+                        await this.activeAdapter.saveLetter(letter);
+                        const idx = this.state.letters.findIndex(l => l.id === letter.id);
+                        if (idx >= 0) {
+                            this.state.letters[idx] = letter;
+                        } else {
+                            this.state.letters.push(letter);
+                        }
+                        summary = `Updated ${letter.id} [Status: ${letter.status}]`;
+                        break;
+                    }
+
+                    case 'DELETE_LETTER': {
+                        const id = payload;
+                        await this.activeAdapter.deleteLetter(id);
+                        this.state.letters = this.state.letters.filter(l => l.id !== id);
+                        summary = `Deleted shipment ${id}`;
+                        break;
+                    }
+
+                    case 'BULK_UPDATE_STATUS': {
+                        const { ids, newStatus } = payload;
+                        let count = 0;
+                        for (const id of ids) {
+                            const l = this.state.letters.find(item => item.id === id);
+                            if (l) {
+                                appendStatusHistory(l, newStatus, l.status, 'Bulk status update');
+                                l.status = newStatus;
+                                l.updatedAt = new Date().toISOString();
+                                await this.activeAdapter.saveLetter(l);
+                                count++;
+                            }
+                        }
+                        summary = `Bulk status updated for ${count} shipments to ${newStatus}`;
+                        break;
+                    }
+
+                    case 'SET_ALL_LETTERS': {
+                        this.state.letters = payload.map(normalizeLetter).filter(l => l.id && l.sender && l.receiver);
+                        summary = `State refreshed with ${this.state.letters.length} items`;
+                        break;
+                    }
+
+                    case 'LOG_ACTIVITY': {
+                        const { message, type } = payload;
+                        await this.activeAdapter.addLog(message, type);
+                        this.state.logs = await this.activeAdapter.getLogs(50);
+                        summary = `Log: ${message.slice(0, 30)}...`;
+                        break;
+                    }
+
+                    case 'CLEAR_LOGS': {
+                        await this.activeAdapter.clearLogs();
+                        this.state.logs = [];
+                        summary = `Activity log cleared`;
+                        break;
+                    }
+
+                    default:
+                        console.warn("Unknown state action:", action);
+                }
+
+                const latency = (performance.now() - startTime).toFixed(1);
+                if (action !== 'LOG_ACTIVITY') {
+                    this.recordMutation(action, summary, latency);
+                }
+
+                // Notify reactive subscribers and update inspector
+                this.notifySubscribers(action, payload);
+                this.updateInspectorUI();
+                return this.state;
+            }
+
+            // --- Storage Engine Switcher & Migration ---
+            async switchStorage(newEngineName) {
+                if (!this.adapters[newEngineName]) return;
+                const oldEngine = this.activeEngineName;
+                if (oldEngine === newEngineName) return;
+
+                this.activeEngineName = newEngineName;
+                this.activeAdapter = this.adapters[newEngineName];
+                localStorage.setItem('sfy_active_storage', newEngineName);
+
+                try {
+                    await this.activeAdapter.init();
+                    let letters = await this.activeAdapter.getAllLetters();
+                    if ((!letters || letters.length === 0) && this.state.letters.length > 0) {
+                        for (const item of this.state.letters) {
+                            await this.activeAdapter.saveLetter(item);
+                        }
+                        showToast(`Migrated ${this.state.letters.length} shipment(s) into ${this.getActiveEngineName()}.`, 'success');
+                    } else if (letters && letters.length > 0) {
+                        this.state.letters = letters.map(normalizeLetter);
+                    }
+
+                    await appendConsoleLog(`STORAGE ENGINE SWITCHED: Active backend is now ${this.getActiveEngineName()}`, 'warn');
+                    showToast(`Storage switched to ${this.getActiveEngineName()}`, 'success');
+
+                    this.updateInspectorUI();
+                    await refreshData();
+                } catch (err) {
+                    console.error("Storage switch error:", err);
+                    showToast(`Failed to switch storage: ${err.message}`, 'error');
+                }
+            }
+
+            async migrateCurrentStateToActiveStorage() {
+                const count = this.state.letters.length;
+                if (!count) {
+                    showToast("No shipment data in state to migrate.", "warn");
+                    return;
+                }
+                for (const item of this.state.letters) {
+                    await this.activeAdapter.saveLetter(item);
+                }
+                showToast(`Synced ${count} shipment(s) into ${this.getActiveEngineName()}!`, 'success');
+                await appendConsoleLog(`STATE SYNC: Synchronized ${count} records into ${this.getActiveEngineName()}.`, 'success');
+                this.updateInspectorUI();
+            }
+
+            async resetDefaultSampleData() {
+                const defaultShipments = [
+                    normalizeLetter({ id: 'LT-1024', sender: 'Berlin Hub', receiver: 'Paris Central', status: 'In Transit', updatedAt: new Date(Date.now() - 7200000).toISOString() }),
+                    normalizeLetter({ id: 'LT-2048', sender: 'Amsterdam Hub', receiver: 'Munich Distribution', status: 'Pending', updatedAt: new Date(Date.now() - 18000000).toISOString() }),
+                    normalizeLetter({ id: 'LT-4096', sender: 'Madrid Gateway', receiver: 'Barcelona Dispatch', status: 'Delivered', updatedAt: new Date(Date.now() - 86400000).toISOString() }),
+                    normalizeLetter({ id: 'LT-5120', sender: 'Lisbon Hub', receiver: 'Porto Distribution', status: 'In Transit', updatedAt: new Date(Date.now() - 3600000).toISOString() }),
+                    normalizeLetter({ id: 'LT-8192', sender: 'Rome Depot', receiver: 'Naples Office', status: 'Delivered', updatedAt: new Date(Date.now() - 43200000).toISOString() }),
+                    normalizeLetter({ id: 'LT-9099', sender: 'Warsaw Center', receiver: 'Krakow Terminal', status: 'Pending', updatedAt: new Date().toISOString() })
+                ];
+                for (const item of defaultShipments) {
+                    await this.activeAdapter.saveLetter(item);
+                }
+                this.state.letters = defaultShipments;
+                await refreshData();
+                showToast(`Reset to 6 sample shipments in ${this.getActiveEngineName()}.`, 'success');
+                await appendConsoleLog(`STATE RESET: Sample shipment data seeded into ${this.getActiveEngineName()}.`, 'info');
+                this.updateInspectorUI();
+            }
+
+            async clearAllStorage() {
+                if (confirm(`Are you sure you want to clear all letter data from ${this.getActiveEngineName()}?`)) {
+                    for (const l of [...this.state.letters]) {
+                        await this.activeAdapter.deleteLetter(l.id);
+                    }
+                    this.state.letters = [];
+                    await refreshData();
+                    showToast(`Cleared letter data from ${this.getActiveEngineName()}.`, 'warn');
+                    await appendConsoleLog(`STORAGE PURGE: All records removed from ${this.getActiveEngineName()}.`, 'danger');
+                    this.updateInspectorUI();
+                }
+            }
+
+            // --- Backward Compatibility with TrackerDB API ---
+            async init() {
+                return this.dispatch('INIT_STATE');
+            }
+
+            async getAllLetters() {
+                if (!this.state.isReady) {
+                    await this.dispatch('INIT_STATE');
+                }
+                return this.state.letters;
+            }
+
+            async getLetter(id) {
+                return this.state.letters.find(l => l.id === id) || null;
+            }
+
+            async saveLetter(letter) {
+                const existing = this.state.letters.find(l => l.id === letter.id);
+                const action = existing ? 'UPDATE_LETTER' : 'ADD_LETTER';
+                await this.dispatch(action, letter);
+                return letter;
+            }
+
+            async deleteLetter(id) {
+                await this.dispatch('DELETE_LETTER', id);
+                return true;
+            }
+
+            async addLog(message, type = 'info') {
+                return this.dispatch('LOG_ACTIVITY', { message, type });
+            }
+
+            async getLogs(limit = 40) {
+                return this.activeAdapter.getLogs(limit);
+            }
+
+            async clearLogs() {
+                return this.dispatch('CLEAR_LOGS');
+            }
+
+            // --- Update UI & Inspector Metrics ---
+            updateInspectorUI() {
+                const engine = this.activeEngineName;
+                const engineLabel = this.getActiveEngineName();
+
+                // Header badge
+                const headerBadge = document.getElementById('headerStorageBadge');
+                if (headerBadge) headerBadge.textContent = engineLabel;
+
+                // Status text
+                const dbStatusText = document.getElementById('dbStatusText');
+                if (dbStatusText) dbStatusText.textContent = `Connected (${engineLabel})`;
+
+                // Flow banner active storage step
+                const flowStep = document.getElementById('flowStorageStep');
+                if (flowStep) flowStep.textContent = engineLabel;
+
+                // Storage card classes
+                const cards = ['cardLocalStorage', 'cardFirebase', 'cardIndexedDB'];
+                const badges = ['badgeLocalStorage', 'badgeFirebase', 'badgeIndexedDB'];
+                const map = { localstorage: 'cardLocalStorage', firebase: 'cardFirebase', indexeddb: 'cardIndexedDB' };
+
+                cards.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('active');
+                });
+                badges.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.className = 'storage-tag-badge standby-badge';
+                        el.textContent = 'Standby';
+                    }
+                });
+
+                const activeCard = document.getElementById(map[engine]);
+                if (activeCard) activeCard.classList.add('active');
+
+                const badgeMap = { localstorage: 'badgeLocalStorage', firebase: 'badgeFirebase', indexeddb: 'badgeIndexedDB' };
+                const activeBadge = document.getElementById(badgeMap[engine]);
+                if (activeBadge) {
+                    activeBadge.className = 'storage-tag-badge active-badge';
+                    activeBadge.textContent = 'Active';
+                }
+
+                // Storage size computation
+                const lsStats = this.adapters.localstorage.getStats();
+                const lsSizeLabel = document.getElementById('localStorageSizeLabel');
+                if (lsSizeLabel) lsSizeLabel.textContent = `${this.state.letters.length} items \u2022 ${lsStats.formattedSize}`;
+
+                // State KPI updates
+                const kpiEngine = document.getElementById('stateKpiEngine');
+                if (kpiEngine) kpiEngine.textContent = engineLabel;
+
+                const kpiLetters = document.getElementById('stateKpiLetters');
+                if (kpiLetters) kpiLetters.textContent = String(this.state.letters.length);
+
+                const kpiMutations = document.getElementById('stateKpiMutations');
+                if (kpiMutations) kpiMutations.textContent = String(this.state.mutations.length);
+
+                const kpiSubs = document.getElementById('stateKpiSubscribers');
+                if (kpiSubs) kpiSubs.textContent = String(this.subscribers.size);
+
+                const kpiBytes = document.getElementById('stateKpiBytes');
+                if (kpiBytes) kpiBytes.textContent = lsStats.formattedSize;
+
+                // Raw JSON Dump
+                const rawBox = document.getElementById('rawStateJsonBox');
+                if (rawBox) {
+                    rawBox.textContent = JSON.stringify(this.getState(), null, 2);
+                }
+            }
+        }
+
+        // --- Application State Manager Instance ---
+        const stateManager = new LetterStateManager();
+        const db = stateManager;
+        if (typeof window !== 'undefined') {
+            window.stateManager = stateManager;
+            window.db = stateManager;
+        } else if (typeof global !== 'undefined') {
+            global.stateManager = stateManager;
+            global.db = stateManager;
+        }
+
         let allLetters = [];
         let editingId = null;
 
@@ -2639,23 +3704,174 @@
 
         // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', async () => {
+            // Subscribe to reactive state updates
+            stateManager.subscribe((state) => {
+                allLetters = state.letters;
+            });
+
             try {
                 const startTime = performance.now();
                 await db.init();
                 const latency = (performance.now() - startTime).toFixed(1);
 
-                dbStatusText.textContent = `Connected (IndexedDB, ${latency}ms)`;
+                dbStatusText.textContent = `Connected (${stateManager.getActiveEngineName()}, ${latency}ms)`;
                 dbStatusDot.style.background = 'var(--clr-success)';
                 dbStatusDot.style.boxShadow = '0 0 8px var(--clr-success)';
 
-                await db.addLog("Database engine connection established successfully.", "success");
+                stateManager.updateInspectorUI();
+                await db.addLog(`State management initialized with ${stateManager.getActiveEngineName()} storage.`, "success");
                 await refreshData();
             } catch (err) {
-                console.error("DB Init Error:", err);
-                dbStatusText.textContent = "Database Error";
+                console.error("Storage Init Error:", err);
+                dbStatusText.textContent = "Storage Error";
                 dbStatusDot.style.background = 'var(--clr-danger)';
                 dbStatusDot.style.boxShadow = '0 0 8px var(--clr-danger)';
-                appendConsoleLog(`CRITICAL: Database initialization failed. ${err.message}`, 'danger');
+                appendConsoleLog(`CRITICAL: Storage initialization failed. ${err.message}`, 'danger');
+            }
+
+            // State Manager Modal Listeners
+            const stateInspectorModalOverlay = document.getElementById('stateInspectorModalOverlay');
+            const openStateInspectorBtn = document.getElementById('openStateInspectorBtn');
+            const openStateInspectorBtnTerminal = document.getElementById('openStateInspectorBtnTerminal');
+            const closeStateInspectorModalBtn = document.getElementById('closeStateInspectorModalBtn');
+
+            function openStateInspectorModal() {
+                if (stateInspectorModalOverlay) {
+                    stateManager.updateInspectorUI();
+                    stateInspectorModalOverlay.classList.add('active');
+                }
+            }
+
+            function closeStateInspectorModal() {
+                if (stateInspectorModalOverlay) {
+                    stateInspectorModalOverlay.classList.remove('active');
+                }
+            }
+
+            if (openStateInspectorBtn) openStateInspectorBtn.addEventListener('click', openStateInspectorModal);
+            if (openStateInspectorBtnTerminal) openStateInspectorBtnTerminal.addEventListener('click', openStateInspectorModal);
+            if (closeStateInspectorModalBtn) closeStateInspectorModalBtn.addEventListener('click', closeStateInspectorModal);
+
+            // Tab switching
+            document.querySelectorAll('.state-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.state-tab-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+                    document.querySelectorAll('.state-tab-pane').forEach(p => p.classList.remove('active'));
+
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
+                    const targetId = btn.getAttribute('data-tab');
+                    const pane = document.getElementById(targetId);
+                    if (pane) pane.classList.add('active');
+
+                    stateManager.updateInspectorUI();
+                });
+            });
+
+            // Storage Card Clicks
+            const cardLocalStorage = document.getElementById('cardLocalStorage');
+            const cardFirebase = document.getElementById('cardFirebase');
+            const cardIndexedDB = document.getElementById('cardIndexedDB');
+            if (cardLocalStorage) cardLocalStorage.addEventListener('click', () => stateManager.switchStorage('localstorage'));
+            if (cardFirebase) cardFirebase.addEventListener('click', () => stateManager.switchStorage('firebase'));
+            if (cardIndexedDB) cardIndexedDB.addEventListener('click', () => stateManager.switchStorage('indexeddb'));
+
+            // Storage Tool Buttons
+            const migrateStateBtn = document.getElementById('migrateStateBtn');
+            if (migrateStateBtn) migrateStateBtn.addEventListener('click', () => stateManager.migrateCurrentStateToActiveStorage());
+
+            const seedDefaultStateBtn = document.getElementById('seedDefaultStateBtn');
+            if (seedDefaultStateBtn) seedDefaultStateBtn.addEventListener('click', () => stateManager.resetDefaultSampleData());
+
+            const clearStorageBtn = document.getElementById('clearStorageBtn');
+            if (clearStorageBtn) clearStorageBtn.addEventListener('click', () => stateManager.clearAllStorage());
+
+            // Firebase Config Listeners
+            const firebaseDbUrlInput = document.getElementById('firebaseDbUrlInput');
+            const saveFirebaseConfigBtn = document.getElementById('saveFirebaseConfigBtn');
+            const testFirebaseSyncBtn = document.getElementById('testFirebaseSyncBtn');
+            const firebaseStatusLabel = document.getElementById('firebaseStatusLabel');
+            const firebaseConnectionStatus = document.getElementById('firebaseConnectionStatus');
+
+            if (firebaseDbUrlInput) {
+                firebaseDbUrlInput.value = localStorage.getItem('sfy_firebase_url') || '';
+            }
+
+            if (saveFirebaseConfigBtn) {
+                saveFirebaseConfigBtn.addEventListener('click', async () => {
+                    const url = firebaseDbUrlInput.value.trim();
+                    stateManager.adapters.firebase.setDbUrl(url);
+                    if (url) {
+                        showToast("Firebase URL saved! Switching to Firebase...", "info");
+                        await stateManager.switchStorage('firebase');
+                        if (firebaseConnectionStatus) firebaseConnectionStatus.textContent = `Connected: ${url}`;
+                        if (firebaseStatusLabel) firebaseStatusLabel.textContent = "Connected";
+                    } else {
+                        showToast("Firebase set to Demo Simulated Mode.", "info");
+                        if (firebaseConnectionStatus) firebaseConnectionStatus.textContent = "Demo Cloud Sync Mode (Active)";
+                        if (firebaseStatusLabel) firebaseStatusLabel.textContent = "Demo Mode";
+                    }
+                    stateManager.updateInspectorUI();
+                });
+            }
+
+            if (testFirebaseSyncBtn) {
+                testFirebaseSyncBtn.addEventListener('click', async () => {
+                    showToast("Testing Firebase sync...", "info");
+                    const start = performance.now();
+                    try {
+                        await stateManager.adapters.firebase.saveLetter({
+                            id: `PING-${Math.floor(100 + Math.random() * 900)}`,
+                            sender: 'Ping Test',
+                            receiver: 'Cloud Verify',
+                            status: 'Delivered',
+                            updatedAt: new Date().toISOString()
+                        });
+                        const latency = (performance.now() - start).toFixed(1);
+                        showToast(`Cloud Sync Verified (${latency}ms)!`, "success");
+                        await appendConsoleLog(`FIREBASE CLOUD TEST: Round-trip state sync verified in ${latency}ms.`, 'success');
+                    } catch (e) {
+                        showToast(`Sync Test: ${e.message}`, "warn");
+                    }
+                });
+            }
+
+            // Raw State JSON actions
+            const copyStateJsonBtn = document.getElementById('copyStateJsonBtn');
+            if (copyStateJsonBtn) {
+                copyStateJsonBtn.addEventListener('click', () => {
+                    const json = JSON.stringify(stateManager.getState(), null, 2);
+                    navigator.clipboard.writeText(json).then(() => {
+                        showToast("State JSON copied to clipboard!", "success");
+                    }).catch(() => {
+                        showToast("Failed to copy JSON to clipboard.", "error");
+                    });
+                });
+            }
+
+            const exportStateFileBtn = document.getElementById('exportStateFileBtn');
+            if (exportStateFileBtn) {
+                exportStateFileBtn.addEventListener('click', () => {
+                    const json = JSON.stringify(stateManager.getState(), null, 2);
+                    downloadBlob(json, `letter_tracker_state_${Date.now()}.json`, 'application/json');
+                    showToast("State snapshot exported!", "success");
+                });
+            }
+
+            const clearMutationStreamBtn = document.getElementById('clearMutationStreamBtn');
+            if (clearMutationStreamBtn) {
+                clearMutationStreamBtn.addEventListener('click', () => {
+                    stateManager.state.mutations = [];
+                    const timeline = document.getElementById('mutationTimeline');
+                    if (timeline) {
+                        timeline.innerHTML = '<div class="mutation-item" style="color:var(--text-muted);"><span>History cleared.</span></div>';
+                    }
+                    stateManager.updateInspectorUI();
+                    showToast("Mutation history cleared.", "info");
+                });
             }
 
             // Event Listeners
@@ -2984,6 +4200,7 @@
                 populateBranchFilters();
                 renderUI();
                 await renderConsoleLogs();
+                if (typeof stateManager !== 'undefined') stateManager.updateInspectorUI();
             } catch (err) {
                 appendConsoleLog(`Error retrieving letter data: ${err.message}`, 'danger');
             }
